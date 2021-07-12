@@ -359,16 +359,16 @@ summary(lm(reshist_addr1_adi_wsum.s ~ missing_PGS, data = cog))
 # crystalized IQ
 # cy_mm1.1 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + (1 | site_id_l), 
 #                        data = cryst_data_pca.complete, REML = F)
-cy_mm1.2 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ schooling_yrs + age_yrs + sex + (1 | site_id_l),
+cy_mm1.2 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex + (1 | site_id_l),
                         data = cryst_data_pca.complete, REML = F) # adding sex
 # 
 # cy_mm2.1 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + (1 | site_id_l), 
 #                        data = cryst_data_pca.complete, REML = F)  # adding pgs
 
-cy_mm2.2 <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + ses_ppca.s + (1 | site_id_l), 
+cy_mm2.2 <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex  + pgs.s + ses_ppca.s + (1 | site_id_l), 
                            data = cryst_data_pca.complete, REML = F)  # adding ses
 summary(cy_mm2.2)
-cy_mm2.2_imp <- with(cryst_imp, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
+cy_mm2.2_imp <- with(cryst_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
 summary(pool(cy_mm2.2_imp))
 
 # cy_mm3.1 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs*pgs.s + ses_ppca.s + (1 | site_id_l), 
@@ -377,75 +377,89 @@ summary(pool(cy_mm2.2_imp))
 #                        data = cryst_data_pca.complete, REML = F) # adding interaction SES
 
 # two way interactions, controlling for two-way age (this brought the B schooling*SES and schooling*PGS down; classic Keller 2014 potential false positive)
-cy_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
-                              schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + (1 | site_id_l), # controling interactions Keller 2014
+# cy_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
+#                               schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + (1 | site_id_l), # controling interactions Keller 2014
+#                             data = cryst_data_pca.complete, REML = F) # adding interaction SES
+
+cy_mm4_no3way <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                              pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +
+                              age_yrs:pgs.s + age_yrs:ses_ppca.s + (1 | site_id_l), # controling interactions Keller 2014
                             data = cryst_data_pca.complete, REML = F) # adding interaction SES
 
-cy_mm4_no3way <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
-                              schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + 
-                              age_yrs:ses_ppca.s + age_yrs:pgs.s + (1 | site_id_l), # controling interactions Keller 2014
-                            data = cryst_data_pca.complete, REML = F) # adding interaction SES
-
-cy_mm4 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs*ses_ppca.s*pgs.s + 
-                       age_yrs:ses_ppca.s + age_yrs:pgs.s + (1 | site_id_l), 
+cy_mm4 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                       pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +
+                       age_yrs:pgs.s + age_yrs:ses_ppca.s + # controling interactions Keller 2014
+                       schooling_yrs:ses_ppca.s:pgs.s + (1 | site_id_l), 
                      data = cryst_data_pca.complete, REML = F) # adding interaction SES
+
 anova(cy_mm4, cy_mm4_no3way)
 
-cy_mm4_imp <- with(cryst_imp, lmer(dv ~ 1 + age + sex + ses*pgs*school + age:pgs + age:ses + (1 | site), REML = FALSE))
-cy_mm4_no3way_imp <- with(cryst_imp, lmer(dv ~ 1 + pgs + ses + age + school + sex + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + (1 | site), REML = FALSE))
+cy_mm4_no3way_imp <- with(cryst_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
+                                            (1 | site), REML = FALSE))
+
+cy_mm4_imp <- with(cryst_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
+                                     ses:pgs:school + (1 | site), REML = FALSE))
+
 D3(cy_mm4_imp, cy_mm4_no3way_imp) # summary(pool(cy_mm4_imp))
 
 # fluid IQ
 # fi_mm1.1 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + (1 | site_id_l), 
 #                        data = fluid_data_pca.complete, REML = F)
- fi_mm1.2 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ schooling_yrs + age_yrs + sex + (1 | site_id_l),
+ fi_mm1.2 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + sex + (1 | site_id_l),
                         data = fluid_data_pca.complete, REML = F) # adding sex
 # fi_mm2.1 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + (1 | site_id_l), 
 #                        data = fluid_data_pca.complete, REML = F) # adding pgs 
 
-fi_mm2.2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + ses_ppca.s + (1 | site_id_l), 
+fi_mm2.2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + (1 | site_id_l), 
                        data = fluid_data_pca.complete, REML = F) # adding SES 
 summary(fi_mm2.2)
-fi_mm2.2_imp <- with(fluid_imp, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
+fi_mm2.2_imp <- with(fluid_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
 summary(pool(fi_mm2.2_imp))
 
 # fi_mm3.1 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs*pgs.s + ses_ppca.s + (1 | site_id_l), 
 #                        data = fluid_data_pca.complete, REML = F) # adding schooling pgs INTERACTION
 # fi_mm3.2 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs*ses_ppca.s + pgs.s + (1 | site_id_l), 
 #                        data = fluid_data_pca.complete, REML = F) # adding schooling SES INTERACTION
-fi_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
-                              schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + (1 | site_id_l), 
-                            data = fluid_data_pca.complete, REML = F)
+# fi_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+#                                            pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s + 
+#                                            (1 | site_id_l), data = fluid_data_pca.complete, REML = F)
 
 
-fi_mm4_no3way <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
-                              schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + 
-                              age_yrs:ses_ppca.s + age_yrs:pgs.s + (1 | site_id_l), 
+fi_mm4_no3way <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                              pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s + 
+                              age_yrs:pgs.s + age_yrs:ses_ppca.s + (1 | site_id_l), 
                             data = fluid_data_pca.complete, REML = F)
-fi_mm4 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs*ses_ppca.s*pgs.s + 
-                       age_yrs:ses_ppca.s + age_yrs:pgs.s + (1 | site_id_l), 
-                     data = fluid_data_pca.complete, REML = F) # adding schooling SES INTERACTION
+
+fi_mm4 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                       pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s + 
+                       age_yrs:pgs.s + age_yrs:ses_ppca.s + 
+                       schooling_yrs:ses_ppca.s:pgs.s + (1 | site_id_l), 
+                     data = fluid_data_pca.complete, REML = F)
 
 anova(fi_mm4, fi_mm4_no3way)
 
-fi_mm4_imp <- with(fluid_imp, lmer(dv ~ 1 + age + sex + ses*pgs*school + age:pgs + age:ses + (1 | site), REML = FALSE))
-fi_mm4_no3way_imp <- with(fluid_imp, lmer(dv ~ 1 + pgs + ses + age + school + sex + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + (1 | site), REML = FALSE))
+fi_mm4_no3way_imp <- with(fluid_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
+                                            (1 | site), REML = FALSE))
+
+fi_mm4_imp <- with(fluid_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
+                                     ses:pgs:school + (1 | site), REML = FALSE))
+
 D3(fi_mm4_imp, fi_mm4_no3way_imp) # summary(pool(fi_mm4_imp))
 
 
 # for list sorting
 # list_mm1.1 <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + schooling_yrs + (1 | site_id_l), 
 #                          data = list_data_pca.complete, REML = F)
-list_mm1.2 <- lme4::lmer(nihtbx_list_uncorrected.s ~ schooling_yrs + age_yrs + sex + (1 | site_id_l),
+list_mm1.2 <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + schooling_yrs + sex + (1 | site_id_l),
                           data = list_data_pca.complete, REML = F)
 # 
 # list_mm2.1 <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + (1 | site_id_l), 
 #                          data = list_data_pca.complete, REML = F)
 
-list_mm2.2 <- lmerTest::lmer(nihtbx_list_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + ses_ppca.s + (1 | site_id_l), 
+list_mm2.2 <- lmerTest::lmer(nihtbx_list_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + (1 | site_id_l), 
                          data = list_data_pca.complete, REML = F)
 summary(list_mm2.2)
-list_mm2.2_imp <- with(list_imp, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
+list_mm2.2_imp <- with(list_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
 summary(pool(list_mm2.2_imp))
 
 
@@ -454,22 +468,29 @@ summary(pool(list_mm2.2_imp))
 # list_mm3.2 <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + sex + schooling_yrs*ses_ppca.s + pgs.s + (1 | site_id_l), 
 #                          data = list_data_pca.complete, REML = F)
 
-list_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
-                                schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + (1 | site_id_l), 
-                              data = list_data_pca.complete, REML = F) # adding interaction SES
+# list_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
+#                                 schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + (1 | site_id_l), 
+#                               data = list_data_pca.complete, REML = F) # adding interaction SES
 
 
-list_mm4_no3way <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + sex + schooling_yrs + ses_ppca.s + pgs.s + 
-                              schooling_yrs:ses_ppca.s + schooling_yrs:pgs.s + pgs.s:ses_ppca.s + 
-                                age_yrs:ses_ppca.s + age_yrs:pgs.s + (1 | site_id_l), 
+list_mm4_no3way <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                                pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +  
+                                age_yrs:pgs.s + age_yrs:ses_ppca.s + (1 | site_id_l), 
                             data = list_data_pca.complete, REML = F) # adding interaction SES
-list_mm4 <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + sex + schooling_yrs*ses_ppca.s*pgs.s + 
-                         age_yrs:ses_ppca.s + age_yrs:pgs.s + (1 | site_id_l), 
-                       data = list_data_pca.complete, REML = F)
+
+list_mm4 <- lme4::lmer(nihtbx_list_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                         pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +  
+                         age_yrs:pgs.s + age_yrs:ses_ppca.s + 
+                         schooling_yrs:ses_ppca.s:pgs.s + (1 | site_id_l), 
+                       data = list_data_pca.complete, REML = F) # adding interaction SES
 anova(list_mm4, list_mm4_no3way)
 
-list_mm4_imp <- with(list_imp, lmer(dv ~ 1 + age + sex + ses*pgs*school + age:pgs + age:ses + (1 | site), REML = FALSE))
-list_mm4_no3way_imp <- with(list_imp, lmer(dv ~ 1 + pgs + ses + age + school + sex + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + (1 | site), REML = FALSE))
+
+list_mm4_no3way_imp <- with(list_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + (1 | site), REML = FALSE))
+
+
+list_mm4_imp <- with(list_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
+                                      ses:pgs:school + (1 | site), REML = FALSE))
 D3(list_mm4_imp, list_mm4_no3way_imp) # summary(pool(list_mm4_imp))
 
 ##################################################################
