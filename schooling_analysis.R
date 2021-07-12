@@ -333,9 +333,9 @@ cryst_data_pca.complete <- na.omit(cryst_data_pca)
 list_data_pca.complete <- na.omit(list_data_pca)
 
 # making dfs with imputed data (uncomment to get imputation results)
-cryst_imp <- imp_3way(cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
-fluid_imp <- imp_3way(fluid_data_pca[, c("site_id_l", "nihtbx_fluidcomp_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
-list_imp <- imp_3way(list_data_pca[, c("site_id_l", "nihtbx_list_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
+# cryst_imp <- imp_3way(cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
+# fluid_imp <- imp_3way(fluid_data_pca[, c("site_id_l", "nihtbx_fluidcomp_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
+# list_imp <- imp_3way(list_data_pca[, c("site_id_l", "nihtbx_list_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
 
 #MAR assumption, showing that those without PGS's happen to be a different population
 cog$missing_PGS <- is.na(cog$pgs)
@@ -713,7 +713,7 @@ cy_plt <- plot(mydf_cy) +
   scale_color_manual(values=c("#64CEED", "#6495ED", "#8164ED")) +
   scale_fill_manual(values=c("#64CEED", "#6495ED", "#8164ED")) +
   theme_minimal(base_size = 25) +
-  labs(title = "", x = "SES (SD)", y = "cIQ")+
+  labs(title = "", x = "cog-PGS (SD)", y = "cIQ")+
   guides(color = guide_legend(reverse = T, "SES (SD)", override.aes=list(shape=15, size = 5, fill=NA))) +
   theme(legend.position= "none") +
   ggExtra::removeGridX()
