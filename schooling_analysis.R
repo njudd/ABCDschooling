@@ -581,31 +581,73 @@ summary(pool(fi_fit_inter_neigh))
 # plot_model(list_mm2, type = "est") + ylim(0, .5) + theme_minimal()
 
 # Cryst
-sjPlot::tab_model(cy_mm2.2, cy_mm4_no3way_noagecontrol, cy_mm4_no3way, cy_mm4,
-                  show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tabs/cryst_results.html")
-
-sjPlot::tab_model(fi_mm2.2, fi_mm4_no3way_noagecontrol, fi_mm4_no3way, fi_mm4,
-                  show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tabs/fluid_results.html")
-sjPlot::tab_model(list_mm2.2, list_mm4_no3way_noagecontrol, list_mm4_no3way, list_mm4,
-                  show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tabs/wm_results.html")
-
+# sjPlot::tab_model(cy_mm2.2, cy_mm4_no3way, cy_mm4,
+#                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tabs/cryst_results.html")
+# 
+# sjPlot::tab_model(fi_mm2.2, fi_mm4_no3way, fi_mm4,
+#                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tabs/fluid_results.html")
+# sjPlot::tab_model(list_mm2.2, list_mm4_no3way, list_mm4,
+#                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tabs/wm_results.html")
 
 # base model tables
-sjPlot::tab_model(cy_mm2.2, fi_mm2.2, list_mm2.2,
-                  show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tabs/base_mods.html")
+# sjPlot::tab_model(cy_mm2.2, fi_mm2.2, list_mm2.2,
+#                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tabs/base_mods.html")
+# 
+# sjPlot::tab_model(cy_mm4, fi_mm4, list_mm4,
+#                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tabs/schooling_intermods.html")
 
-sjPlot::tab_model(cy_mm4, fi_mm4, list_mm4,
-                  show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tabs/schooling_intermods.html")
+# making imputation tables... the nice fucntion no longer works...
+
+cy_IMPresults <- setDT(summary(pool(cy_mm2.2_imp)))[
+  setDT(summary(pool(cy_mm4_no3way_imp))), on = 'term'][
+    setDT(summary(pool(cy_mm4_imp))), on = 'term'][
+      , c("statistic", "df", "i.statistic", "i.df", "i.statistic.1", "i.df.1") := NULL][
+        , lapply(.SD, round, 3), term # rounding all values to 3
+      ] #joining full model
+colnames(cy_IMPresults) <- c("term", "est_mm2.2", "se_mm2.2", "p_mm2.2", "est_mm4_no3way", "se_mm4_no3way", "p_mm4_no3way", "est_mm4", "se_mm4", "p_mm4")
+
+# now for fluid
+fi_IMPresults <- setDT(summary(pool(fi_mm2.2_imp)))[
+  setDT(summary(pool(fi_mm4_no3way_imp))), on = 'term'][
+    setDT(summary(pool(fi_mm4_imp))), on = 'term'][
+      , c("statistic", "df", "i.statistic", "i.df", "i.statistic.1", "i.df.1") := NULL][
+        , lapply(.SD, round, 3), term # rounding all values to 3
+        ] #joining full model
+colnames(fi_IMPresults) <- c("term", "est_mm2.2", "se_mm2.2", "p_mm2.2", "est_mm4_no3way", "se_mm4_no3way", "p_mm4_no3way", "est_mm4", "se_mm4", "p_mm4")
+# now for WM
+wm_IMPresults <- setDT(summary(pool(list_mm2.2_imp)))[
+  setDT(summary(pool(list_mm4_no3way_imp))), on = 'term'][
+    setDT(summary(pool(list_mm4_imp))), on = 'term'][
+      , c("statistic", "df", "i.statistic", "i.df", "i.statistic.1", "i.df.1") := NULL][
+        , lapply(.SD, round, 3), term # rounding all values to 3
+        ] #joining full model
+colnames(wm_IMPresults) <- c("term", "est_mm2.2", "se_mm2.2", "p_mm2.2", "est_mm4_no3way", "se_mm4_no3way", "p_mm4_no3way", "est_mm4", "se_mm4", "p_mm4")
+
+# saving the tables
+# library(kableExtra); library(magrittr)
+# kbl(cy_IMPresults) %>%
+#   kable_styling() %>%
+#   save_kable(file = "~/Projects/R_projects/ABCDschooling/tabs/cryst_results_imp.html", self_contained = T)
+# kbl(fi_IMPresults) %>%
+#   kable_styling() %>%
+#   save_kable(file = "~/Projects/R_projects/ABCDschooling/tabs/fluid_results_imp.html", self_contained = T)
+# kbl(wm_IMPresults) %>%
+#   kable_styling() %>%
+#   save_kable(file = "~/Projects/R_projects/ABCDschooling/tabs/wm_results_imp.html", self_contained = T)
+
+
+kableExtra::kable_styling(kableExtra::kable(cy_IMPresults))
+
 
 # I kept the most important imputation checks here
 # xyplot(imp, pgs ~ ses, na.groups = miss
