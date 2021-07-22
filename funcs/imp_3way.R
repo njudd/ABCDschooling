@@ -6,7 +6,9 @@
 # school*age is intentionally left out as this is an assumption of regression discounity
 
 imp_3way <- function(d){
-  print("this function is hard coded")
+  print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  print("this function is hard coded!!!!!")
+  print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   print("make sure cols are in this order: site_id_l, DV (coded as dv), ses_ppca.s, pgs.s, age_yrs, schooling_yrs, sex")
   
   require(mice); require(miceadds)
