@@ -669,21 +669,21 @@ kableExtra::kable_styling(kableExtra::kable(cy_IMPresults))
 eff_plt <- data.table(DV = c(rep("fIQ", 4), rep("cIQ", 4), rep("WM", 4)),
                       var = c(rep(c("Age 1yr", "School 1yr", "cog-PGS", "SES"), 3)),
            beta = c(
-             as.numeric(summary(fi_mm2.2)$coefficients[,1][c(2,4,5,6)]),
-             as.numeric(summary(cy_mm2.2)$coefficients[,1][c(2,4,5,6)]),
-             as.numeric(summary(list_mm2.2)$coefficients[,1][c(2,4,5,6)]) # gender is last in the model so it works
+             as.numeric(summary(fi_mm2.2)$coefficients[,1][c(2,3,5,6)]), # grabing the beta terms for age, schooling, pgs & ses (in the same order as the var I made)
+             as.numeric(summary(cy_mm2.2)$coefficients[,1][c(2,3,5,6)]), 
+             as.numeric(summary(list_mm2.2)$coefficients[,1][c(2,3,5,6)]) # gender is last in the model so it works
            ), 
-           ci_low = c(
-             as.numeric(confint(fi_mm2.2)[c(4,6,7,8), 1]),as.numeric(confint(cy_mm2.2)[c(4,6,7,8), 1]), as.numeric(confint(list_mm2.2)[c(4,6,7,8), 1])
+           ci_low = c( # getting the lower confidence intervals for the 4 terms for each 3 models
+             as.numeric(confint(fi_mm2.2)[c(4,5,7,8), 1]),as.numeric(confint(cy_mm2.2)[c(4,5,7,8), 1]), as.numeric(confint(list_mm2.2)[c(4,5,7,8), 1])
            ), 
-           ci_high= c(
-             as.numeric(confint(fi_mm2.2)[c(4,6,7,8), 2]),as.numeric(confint(cy_mm2.2)[c(4,6,7,8), 2]), as.numeric(confint(list_mm2.2)[c(4,6,7,8), 2])
+           ci_high= c( # getting the higher confidence intervals for the 4 terms for each 3 models
+             as.numeric(confint(fi_mm2.2)[c(4,5,7,8), 2]),as.numeric(confint(cy_mm2.2)[c(4,5,7,8), 2]), as.numeric(confint(list_mm2.2)[c(4,5,7,8), 2])
            ))
 
-barCOLS <- c('#DE3163', '#6495ED', '#9FE2BF')
+barCOLS <- c('#DE3163', '#6495ED', '#9FE2BF') # a vector of colors
 
-eff_plt$var <- factor(eff_plt$var, levels = c("Age 1yr", "School 1yr", "cog-PGS", "SES"))
-eff_plt$DV <- factor(eff_plt$DV)
+eff_plt$var <- factor(eff_plt$var, levels = c("Age 1yr", "School 1yr", "cog-PGS", "SES")) # making var a factor for ggplot, ordering them as I wish as well
+eff_plt$DV <- factor(eff_plt$DV) # making the DV as a factor
 
 main_eff_Dplt <- ggplot(eff_plt, aes(var, beta, ymin = ci_low, ymax = ci_high, col = DV, fill = DV)) +
   geom_linerange(size=1.5,position=position_dodge(width = 0.5)) +
