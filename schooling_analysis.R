@@ -791,3 +791,185 @@ ggsave("figs/gxe_inter_plt.png", gxe_inter_plt, width = 20, height = 10)
 # compare_performance(fi_mm1, fi_mm1.2, fi_mm2, fi_mm3, rank = TRUE)
 # compare_performance(cy_mm1, cy_mm1.2, cy_mm2, cy_mm3, rank = TRUE)
 # compare_performance(list_mm1, list_mm1.2, list_mm2, list_mm3, rank = TRUE)
+
+
+
+# PNAS rev suggestions (some are good and make sense, some dont)
+
+# Regression disc plot 
+
+library(visreg)
+visreg_partial_residi_cy <- visreg(cy_mm2.2, "schooling_yrs")
+partial_residi_cy <- ggplot(visreg_partial_residi_cy$res, aes(schooling_yrs, visregRes)) + geom_point(size=1, alpha= 0.5, color = "black") + geom_smooth(method = "lm", color = "black") +
+  labs(y = "Partial Residuals of cIQ", x = "Years of schooling") + theme_minimal(base_size = 15) +
+  #  scale_x_continuous(breaks=c(-3, -1.5, 0, 1.5, 3), labels = c('-3', '-1.5', '0', '1.5', '3'), limits = c(-2.5, 2)) +
+  scale_y_continuous(breaks=c(-2, -1, 0, 1, 2), labels = c('-3', '-1.5', '0', '1.5', '3'), limits = c(-2, 2)) 
+
+
+partial_residi_cy <- ggplot(visreg_partial_residi_cy$res, aes(schooling_yrs, visregRes)) + 
+  geom_jitter(size=1, alpha= 0.5, color = "black") + geom_smooth(method = "lm", color = "black") +
+  labs(y = "Partial Residuals of cIQ", x = "Years of schooling") + theme_minimal(base_size = 15) +
+  #  scale_x_continuous(breaks=c(-3, -1.5, 0, 1.5, 3), labels = c('-3', '-1.5', '0', '1.5', '3'), limits = c(-2.5, 2)) +
+  scale_y_continuous(breaks=c(-2, -1, 0, 1, 2), labels = c('-3', '-1.5', '0', '1.5', '3'), limits = c(-2, 2)) 
+
+
+
+
+
+
+visreg_partial_residi_fi <- visreg(fi_mm2.2, "schooling_yrs")
+partial_residi_fi <- ggplot(visreg_partial_residi_fi$res, aes(schooling_yrs, visregRes)) + geom_point(size=1, alpha= 0.5, color = "black") + geom_smooth(method = "lm", color = "black") +
+  labs(y = "Partial Residuals of cIQ", x = "Years of schooling") + theme_minimal(base_size = 15) +
+  #  scale_x_continuous(breaks=c(-3, -1.5, 0, 1.5, 3), labels = c('-3', '-1.5', '0', '1.5', '3'), limits = c(-2.5, 2)) +
+  scale_y_continuous(breaks=c(-2, -1, 0, 1, 2), labels = c('-3', '-1.5', '0', '1.5', '3'), limits = c(-2, 2)) 
+
+visreg_partial_residi_list <- visreg(list_mm2.2, "schooling_yrs")
+partial_residi_list <- ggplot(visreg_partial_residi_list$res, aes(schooling_yrs, visregRes)) + geom_point(size=1, alpha= 0.5, color = "black") + geom_smooth(method = "lm", color = "black") +
+  labs(y = "Partial Residuals of cIQ", x = "Years of schooling") + theme_minimal(base_size = 15) +
+  #  scale_x_continuous(breaks=c(-3, -1.5, 0, 1.5, 3), labels = c('-3', '-1.5', '0', '1.5', '3'), limits = c(-2.5, 2)) +
+  scale_y_continuous(breaks=c(-2, -1, 0, 1, 2), labels = c('-2', '-1', '0', '2', '2'), limits = c(-2, 2)) 
+
+
+
+partial_residi_cy + partial_residi_fi + partial_residi_list
+
+
+
+######### plotting with density
+
+
+### some small things, you could add the main effect of schooling to all the residual values so ability starts at zero,
+### also the regression line should be the estimated slope, not just estimated for the graph.
+
+get_density <- function(x, y, ...) {
+  dens <- MASS::kde2d(x, y, ...)
+  ix <- findInterval(x, dens$x)
+  iy <- findInterval(y, dens$y)
+  ii <- cbind(ix, iy)
+  return(dens$z[ii])
+}
+
+visreg_partial_residi_cy <- visreg(cy_mm2.2, "schooling_yrs")
+visreg_partial_residi_fi <- visreg(fi_mm2.2, "schooling_yrs")
+visreg_partial_residi_list <- visreg(list_mm2.2, "schooling_yrs")
+
+visreg_partial_residi_cy <- visreg_partial_residi_cy$res
+visreg_partial_residi_fi <- visreg_partial_residi_fi$res
+visreg_partial_residi_list <- visreg_partial_residi_list$res
+
+
+visreg_partial_residi_cy$dens <- get_density(visreg_partial_residi_cy$schooling_yrs, visreg_partial_residi_cy$visregRes, n =100)
+visreg_partial_residi_fi$dens <- get_density(visreg_partial_residi_fi$schooling_yrs, visreg_partial_residi_fi$visregRes, n =100)
+visreg_partial_residi_list$dens <- get_density(visreg_partial_residi_list$schooling_yrs, visreg_partial_residi_list$visregRes, n =100)
+
+visreg_partial_residi_cy$dens <- -as.numeric(scale(visreg_partial_residi_cy$dens))
+visreg_partial_residi_fi$dens <- -as.numeric(scale(visreg_partial_residi_fi$dens))
+visreg_partial_residi_list$dens <- -as.numeric(scale(visreg_partial_residi_list$dens))
+
+
+cy_school_plt <- ggplot(visreg_partial_residi_cy, aes(x = schooling_yrs, y = visregRes + 0.20166)) + 
+  geom_jitter(aes(color = dens), alpha = 0.2, width = .01) + # width = .5)
+  geom_smooth(method = "lm", color = "black") + # you should put the actual model estimated slope
+  theme_minimal() +
+  theme(legend.position = "none", panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ylim(-1.5,1.5) +
+  labs(title = "", x = "Years of Schooling", y = "Partial Residuals of cIQ") +
+  geom_abline(slope = 0.20166, intercept = 0, color = 'black', size = 2)
+  # theme_minimal(base_size = 35)
+  #viridis::scale_color_viridis(direction = 1, option = "A")
+
+
+
+
+ggplot(visreg_partial_residi_cy, aes(x = schooling_yrs, y = visregRes)) + 
+  geom_jitter(aes(color = dens), alpha = 0.2, width = .01) + # width = .5)
+  geom_smooth(method = "lm", color = "black") + # you should put the actual model estimated slope
+  theme_minimal() +
+  theme(legend.position = "none", panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ylim(-1.5,1.5) +
+  labs(title = "", x = "Years of Schooling", y = "Partial Residuals of cIQ") +
+  geom_abline(slope = 0.20166, intercept = -0.20166, color = 'black', size = 2, color = "red", alpha = .3)
+# theme_minimal(base_size = 35)
+#viridis::scale_color_viridis(direction = 1, option = "A")
+
+
+# https://stackoverflow.com/questions/44960410/how-to-limit-the-length-of-abline-in-ggplot2-using-slope-and-intercept
+# https://stackoverflow.com/questions/37641831/constraining-an-abline-in-ggplot2
+
+
+
+visreg(cy_mm2.2, "schooling_yrs")
+
+# why are these two lines so different...?
+
+
+
+  
+fi_school_plt <- ggplot(visreg_partial_residi_fi, aes(x = schooling_yrs, y = visregRes)) + 
+  geom_jitter(aes(color = dens), alpha = 0.2, width = .01) + # width = .5)
+  geom_smooth(method = "lm", color = "black") +
+  theme_minimal() +
+  theme(legend.position = "none", panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ylim(-2,2) +
+  labs(title = "", x = "Years of Schooling", y = "Partial Residuals of fIQ")
+# theme_minimal(base_size = 35)
+#viridis::scale_color_viridis(direction = 1, option = "A")
+
+list_school_plt <- ggplot(visreg_partial_residi_list, aes(x = schooling_yrs, y = visregRes)) + 
+  geom_jitter(aes(color = dens), alpha = 0.2, width = .01) + # width = .5)
+  geom_smooth(method = "lm", color = "black") +
+  theme_minimal() +
+  theme(legend.position = "none", panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ylim(-2,2) +
+  labs(title = "", x = "Years of Schooling", y = "Partial Residuals of WM")
+# theme_minimal(base_size = 35)
+#viridis::scale_color_viridis(direction = 1, option = "A")
+
+
+
+cy_school_plt / fi_school_plt / list_school_plt
+
+
+
+
+
+#### 
+
+# you need to residualize age by interview date,
+# y axis can be IQ, x is age and than you group by the factor grade
+
+
+# it will look super bad because of heterogeniety between schools.
+
+# just subtract interview month from interview age
+
+cog$age_sub <- cog$interview_age - cog$interview_mnth
+
+# yet this is a problem since you haven't subtracted interview_mnt from cognition
+
+# Say something that we intially wanted to base our analysis on the unit of grade rather than montsh of schooling.
+# while both are identical for regression disc. assumptions since recruitment was yearly we cannot break student by grade.
+# if we broke them by grade we would be conflating schooling and age.
+
+# cognition includes age + school, since students were testing on a year around basis
+
+# making a partial residual plto for IQ
+
+cog$grade <- as.factor(cog$grade)
+cog$demo_ed_v2 <- as.factor(cog$demo_ed_v2)
+
+ggplot(cog[demo_ed_v2 != 3], aes(age_sub, nihtbx_cryst_uncorrected.s, color = demo_ed_v2)) +
+  geom_jitter(alpha = .3) +
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  ylim(-2,2)
+
+ggplot(cog, aes(age_sub, nihtbx_cryst_uncorrected.s, color = demo_ed_v2)) +
+  geom_jitter(alpha = .3) +
+  geom_smooth(method = "lm") +
+  theme_minimal()
+
+
+
+
+
