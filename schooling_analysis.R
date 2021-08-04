@@ -796,6 +796,18 @@ ggsave("figs/gxe_inter_plt.png", gxe_inter_plt, width = 20, height = 10)
 
 # PNAS rev suggestions (some are good and make sense, some dont)
 
+
+# could put this table in the SI
+performance::check_collinearity(cy_mm2.2)
+
+
+
+# R squared with MuMIn package
+MuMIn::r.squaredGLMM()
+
+
+
+
 # Regression disc plot 
 
 library(visreg)
@@ -896,9 +908,19 @@ ggplot(visreg_partial_residi_cy, aes(x = schooling_yrs, y = visregRes)) +
 # https://stackoverflow.com/questions/44960410/how-to-limit-the-length-of-abline-in-ggplot2-using-slope-and-intercept
 # https://stackoverflow.com/questions/37641831/constraining-an-abline-in-ggplot2
 
+# *********************
+# SES looks like it works, you should be careful with fucking with it!!!!*********
+# *********************
 
-
-visreg(cy_mm2.2, "schooling_yrs")
+visreg(cy_mm2.2, "ses_ppca.s")
+visreg_partial_residi_SES <- visreg(cy_mm2.2, "ses_ppca.s")
+visreg_partial_residi_SES <- visreg_partial_residi_SES$res
+visreg_partial_residi_SES$dens <- get_density(visreg_partial_residi_SES$ses_ppca.s, visreg_partial_residi_SES$visregRes, n =100)
+visreg_partial_residi_SES$dens <- -as.numeric(scale(visreg_partial_residi_SES$dens))
+ggplot(visreg_partial_residi_SES, aes(x = ses_ppca.s, y = visregRes)) + 
+  geom_jitter(aes(color = dens), alpha = 0.2, width = .01) + # width = .5)
+  geom_smooth(method = "lm", color = "black") + # you should put the actual model estimated slope
+  theme_minimal() 
 
 # why are these two lines so different...?
 
