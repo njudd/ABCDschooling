@@ -5,6 +5,8 @@
 # age_d, age_d.pgs_d, age_d.ses_d
 # school*age is intentionally left out as this is an assumption of regression discounity
 
+# https://stefvanbuuren.name/fimd/sec-mlguidelines.html
+
 imp_3way <- function(d){
   print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   print("this function is hard coded!!!!!")
@@ -13,6 +15,34 @@ imp_3way <- function(d){
   
   require(mice); require(miceadds)
   
+  
+d = cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex",
+  "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")]
+
+pred <- make.predictorMatrix(d)
+
+
+#colnames(d) <- c("site", "dv", "ses", "pgs", "age", "school", #"sex",
+#     "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
+d$site_id_l <- as.numeric(as.factor(d$site_id_l))
+
+pred[,] <- 3
+pred[, "site_id_l"] <- -2
+pred[diag(dim(pred)[1])==1] <- 0
+
+# meth <- make.method(d)
+# meth[c("dv", "pgs", "ses", "age", "school", "sex",
+#        "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", 
+#        "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")] <- "2l.pmm"
+
+imp <- mice(d, pred = pred, meth = "2l.pmm", seed = 919,
+            m = 10, print = FALSE)
+
+ct <- with(imp, lmer(nihtbx_cryst_uncorrected.s ~ 1 + age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + (1 | site_id_l), REML = FALSE))
+summary(pool(ct))
+
+
+
 
   
   colnames(d) <- c("site", "dv", "ses", "pgs", "age", "school", "sex",
