@@ -201,10 +201,7 @@ cog <- fread("sed -e '2d' data/abcd_yksad01.txt")[
 # PGS from Bruno (there is only 10,000 of them)
 cog <- fread("data/abcd_pgs.txt")[cog, on = "subjectkey"]
 
-# Bringing outliers to the fence for cryst, fluid and list sorting
-cog$nihtbx_fluidcomp_uncorrected <- vec_to_fence(cog$nihtbx_fluidcomp_uncorrected)
-cog$nihtbx_cryst_uncorrected <- vec_to_fence(cog$nihtbx_cryst_uncorrected)
-cog$nihtbx_list_uncorrected <- vec_to_fence(cog$nihtbx_list_uncorrected)
+
 
 # psych::describe(cog)
 
@@ -217,6 +214,13 @@ cog$nihtbx_list_uncorrected <- vec_to_fence(cog$nihtbx_list_uncorrected)
 
 cog <- cog[kbi_y_grade_repeat ==0] # 9% of subjects gone
 
+cog <- fread('data/pca_data_ethnicity_PC20.txt', fill = T)[,1:22][cog, on = "subjectkey"][name == "White"]
+
+
+# Bringing outliers to the fence for cryst, fluid and list sorting
+cog$nihtbx_fluidcomp_uncorrected <- vec_to_fence(cog$nihtbx_fluidcomp_uncorrected)
+cog$nihtbx_cryst_uncorrected <- vec_to_fence(cog$nihtbx_cryst_uncorrected)
+cog$nihtbx_list_uncorrected <- vec_to_fence(cog$nihtbx_list_uncorrected)
 
 # gonna do probabilitics PCA to get the SES PCA scores and than MICE for the other values
 cog$ParEd_max.s <- as.numeric(scale(cog$ParEd_max))
@@ -245,6 +249,15 @@ cog$nihtbx_list_uncorrected.s <- as.numeric(scale(cog$nihtbx_list_uncorrected))
 
 cog$pgs.s <- as.numeric(scale(cog$pgs))
 cog$ses_ppca.s <- -as.numeric(scale(cog$ses_ppca)) # sometimes you need to flip this sign, see cor with parental edu to see
+
+# adding PCs Aug 4th 2021
+
+
+
+# 
+# cog$ses_ppca_whites <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)]), nPcs = 1, seed = 42)@loadings)
+# cog$ses_ppca_whites[cog$twoormore==1] <- NA
+# cog$ses_ppca_whites.s <- -as.numeric(scale(cog$ses_ppca_whites)) 
 
 ##################################################################
 ########### plotting descript (not essential to run) ###########  ###### 
@@ -305,14 +318,16 @@ fluid_data_pca <- cog[kbi_y_grade_repeat == 0 # this has already been done
                     ][
                       , .(nihtbx_fluidcomp_uncorrected.s,
                           schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                          ses_ppca.s, pgs.s, subjectkey)]#[
+                          ses_ppca.s, pgs.s, subjectkey,
+                          C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20)]#[
                         #    !is.na(nihtbx_fluidcomp_uncorrected.s)] # removes 147 (>2%)
                           
 cryst_data_pca <- cog[kbi_y_grade_repeat == 0 # this has already been done
                       ][
                         , .(nihtbx_cryst_uncorrected.s,
                             schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                            ses_ppca.s, pgs.s, subjectkey)]#[
+                            ses_ppca.s, pgs.s, subjectkey,
+                            C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20)]#[
                          #     !is.na(nihtbx_cryst_uncorrected.s)] # removes 115 (~1.5%)
                             
 list_data_pca <- cog[kbi_y_grade_repeat == 0 # this has already been done
@@ -357,16 +372,27 @@ summary(lm(reshist_addr1_adi_wsum.s ~ missing_PGS, data = cog))
 ### regression discounity models
 
 # crystalized IQ
-# cy_mm1.1 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + (1 | site_id_l), 
-#                        data = cryst_data_pca.complete, REML = F)
+
+cy_mm1.1_age <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + (1 | site_id_l), data = cryst_data_pca.complete, REML = F)
+
+cy_mm1.1 <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F)
+
+
 cy_mm1.2 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex + (1 | site_id_l),
                         data = cryst_data_pca.complete, REML = F) # adding sex
+
+cy_mm1.2 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + pgs.s + ses_ppca.s + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F) # adding sex
+
+
 # 
 # cy_mm2.1 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + (1 | site_id_l), 
 #                        data = cryst_data_pca.complete, REML = F)  # adding pgs
 
-cy_mm2.2 <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex  + pgs.s + ses_ppca.s + (1 | site_id_l), 
-                           data = cryst_data_pca.complete, REML = F)  # adding ses
+cy_mm2.2 <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex  + pgs.s + ses_ppca.s + 
+                             C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l), # controling interactions Keller 2014
+                           data = cryst_data_pca.complete, REML = F)
 summary(cy_mm2.2)
 cy_mm2.2_imp <- with(cryst_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
 summary(pool(cy_mm2.2_imp))
@@ -385,6 +411,13 @@ cy_mm4_no3way <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs
                               pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +
                               age_yrs:pgs.s + age_yrs:ses_ppca.s + (1 | site_id_l), # controling interactions Keller 2014
                             data = cryst_data_pca.complete, REML = F) # adding interaction SES
+
+
+cy_mm4_no3way <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                              pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +
+                              age_yrs:pgs.s + age_yrs:ses_ppca.s + 
+                              C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l), # controling interactions Keller 2014
+                            data = cryst_data_pca.complete, REML = F)
 
 cy_mm4 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
                        pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +
@@ -410,7 +443,8 @@ D3(cy_mm4_imp, cy_mm4_no3way_imp) # summary(pool(cy_mm4_imp))
 # fi_mm2.1 <- lme4::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + sex + schooling_yrs + pgs.s + (1 | site_id_l), 
 #                        data = fluid_data_pca.complete, REML = F) # adding pgs 
 
-fi_mm2.2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + (1 | site_id_l), 
+fi_mm2.2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
+                             C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l), # controling interactions Keller 2014
                        data = fluid_data_pca.complete, REML = F) # adding SES 
 summary(fi_mm2.2)
 fi_mm2.2_imp <- with(fluid_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
