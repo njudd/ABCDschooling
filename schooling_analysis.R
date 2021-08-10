@@ -214,8 +214,7 @@ cog <- fread("data/abcd_pgs.txt")[cog, on = "subjectkey"]
 
 cog <- cog[kbi_y_grade_repeat ==0] # 9% of subjects gone
 
-cog <- fread('data/pca_data_ethnicity_PC20.txt', fill = T)[,1:22][cog, on = "subjectkey"][name == "White"]
-
+cog <- fread('data/pca_data_ethnicity_PC20.txt', fill = T)[,1:22][cog, on = "subjectkey"] #[name == "White"]
 
 # Bringing outliers to the fence for cryst, fluid and list sorting
 cog$nihtbx_fluidcomp_uncorrected <- vec_to_fence(cog$nihtbx_fluidcomp_uncorrected)
@@ -228,7 +227,7 @@ cog$demo_comb_income_v2.s <- as.numeric(scale(cog$demo_comb_income_v2))
 cog$reshist_addr1_adi_wsum.s <- as.numeric(scale(cog$reshist_addr1_adi_wsum))
 
 # mice::md.pattern(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)], plot = F)
-cog$ses_ppca <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)]), nPcs = 1, seed = 42)@loadings)
+cog$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)]), nPcs = 1, seed = 42)@loadings)
 # ppca has a .999 correlation for the non-missing values with normal pca
 
 # I am now finding subject that were missing more than 1 value for the 3 SES categories
@@ -240,24 +239,20 @@ cog$twoormore[cog$twoormore==1] <- 0
 cog$twoormore[cog$twoormore>1] <- 1
 
 # sum(cog$twoormore) # 46 subjects, matches md pattern above
-cog$ses_ppca[cog$twoormore==1] <- NA # making them NA
+cog$ses[cog$twoormore==1] <- NA # making them NA
+
+# residualizing the DV's based on the PCs, this will throw out cognitive data of those missing genetics
+# yet there is no perfect solution (without listwise deletion), and even if you were to use SEM with fiml you would be estimating missing data using other data with population stratification
+# the reason I can't make a MICE imputation with it is because all the PCs are orthogonal, there's MICE doesn't work... because ofc you can't estimate P1 ~ P2 + P3 etc..
+# there singular matrix warning comes up. I wasted a day before I relized this issue.
+
+cog <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), data = cog)
+
 
 # standardizing vars
-cog$nihtbx_fluidcomp_uncorrected.s <- as.numeric(scale(cog$nihtbx_fluidcomp_uncorrected))
-cog$nihtbx_cryst_uncorrected.s <- as.numeric(scale(cog$nihtbx_cryst_uncorrected))
-cog$nihtbx_list_uncorrected.s <- as.numeric(scale(cog$nihtbx_list_uncorrected))
+cols <- c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected", "pgs", "ses")
+cog[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
 
-cog$pgs.s <- as.numeric(scale(cog$pgs))
-cog$ses_ppca.s <- -as.numeric(scale(cog$ses_ppca)) # sometimes you need to flip this sign, see cor with parental edu to see
-
-# adding PCs Aug 4th 2021
-
-
-
-# 
-# cog$ses_ppca_whites <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)]), nPcs = 1, seed = 42)@loadings)
-# cog$ses_ppca_whites[cog$twoormore==1] <- NA
-# cog$ses_ppca_whites.s <- -as.numeric(scale(cog$ses_ppca_whites)) 
 
 ##################################################################
 ########### plotting descript (not essential to run) ###########  ###### 
@@ -314,27 +309,19 @@ cog$ses_ppca.s <- -as.numeric(scale(cog$ses_ppca)) # sometimes you need to flip 
 
 ##################################################################
 ########### model datasets ########### 
-fluid_data_pca <- cog[kbi_y_grade_repeat == 0 # this has already been done
-                    ][
-                      , .(nihtbx_fluidcomp_uncorrected.s,
+fluid_data_pca <- cog[, .(nihtbx_fluidcomp_uncorrected,
                           schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                          ses_ppca.s, pgs.s, subjectkey,
-                          C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20)]#[
+                          ses_ppca.s, pgs.s, subjectkey)]#[
                         #    !is.na(nihtbx_fluidcomp_uncorrected.s)] # removes 147 (>2%)
                           
-cryst_data_pca <- cog[kbi_y_grade_repeat == 0 # this has already been done
-                      ][
-                        , .(nihtbx_cryst_uncorrected.s,
+cryst_data_pca <- cog[, .(nihtbx_cryst_uncorrected,
                             schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                            ses_ppca.s, pgs.s, subjectkey,
-                            C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20)]#[
+                            ses, pgs, subjectkey)]#[
                          #     !is.na(nihtbx_cryst_uncorrected.s)] # removes 115 (~1.5%)
                             
-list_data_pca <- cog[kbi_y_grade_repeat == 0 # this has already been done
-                      ][
-                        , .(nihtbx_list_uncorrected.s,
+list_data_pca <- cog[, .(nihtbx_list_uncorrected,
                             schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                            ses_ppca.s, pgs.s, subjectkey)]#[
+                            ses, pgs, subjectkey)]#[
                     #          !is.na(nihtbx_list_uncorrected.s)] # removes 115 (~1.5%)
                              
 # checking patterns of missingness
@@ -348,9 +335,12 @@ cryst_data_pca.complete <- na.omit(cryst_data_pca)
 list_data_pca.complete <- na.omit(list_data_pca)
 
 # making dfs with imputed data (uncomment to get imputation results)
-# cryst_imp <- imp_3way(cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
-# fluid_imp <- imp_3way(fluid_data_pca[, c("site_id_l", "nihtbx_fluidcomp_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
-# list_imp <- imp_3way(list_data_pca[, c("site_id_l", "nihtbx_list_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")])
+source('funcs/imp_3way.R')
+
+cryst_imp <- imp_3way(cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
+# fluid_imp <- imp_3way(fluid_data_pca[, c("site_id_l", "nihtbx_fluidcomp_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
+# list_imp <- imp_3way(list_data_pca[, c("site_id_l", "nihtbx_list_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
+
 
 #MAR assumption, showing that those without PGS's happen to be a different population
 cog$missing_PGS <- is.na(cog$pgs)
@@ -422,7 +412,8 @@ cy_mm4_no3way <- lmerTest::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling
 cy_mm4 <- lme4::lmer(nihtbx_cryst_uncorrected.s ~ age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + 
                        pgs.s:ses_ppca.s + schooling_yrs:pgs.s + schooling_yrs:ses_ppca.s +
                        age_yrs:pgs.s + age_yrs:ses_ppca.s + # controling interactions Keller 2014
-                       schooling_yrs:ses_ppca.s:pgs.s + (1 | site_id_l), 
+                       schooling_yrs:ses_ppca.s:pgs.s +
+                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l), # controling interactions Keller 2014
                      data = cryst_data_pca.complete, REML = F) # adding interaction SES
 
 anova(cy_mm4, cy_mm4_no3way)
