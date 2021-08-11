@@ -11,7 +11,7 @@ imp_3way <- function(d){
   print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   print("this function is hard coded!!!!!")
   print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-  print("make sure cols are in this order: site_id_l, DV (coded as dv), ses_ppca.s, pgs.s, age_yrs, schooling_yrs, sex, plus 20PC")
+  print("make sure cols are in this order: site_id_l, DV (coded as dv), ses_ppca.s, pgs.s, age_yrs, schooling_yrs, sex")
   
   require(mice); require(miceadds)
   
