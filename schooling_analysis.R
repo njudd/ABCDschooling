@@ -350,6 +350,17 @@ cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))
 
 # making dfs with imputed data (uncomment to get imputation results)
 
+# very sad; it is impossible to impute with PCs. They are orthogonal, therefore loads of singularity warnings
+# and eventually stops working with higher PCs.
+# There is no perfect sollution to this so I will sadly just list this as a limitation
+# They're alternatives to controlling for PCs, we could just residualize the PGS for them (Judd et al., 2020 PNAS). 
+# Yet this is unsatisfactory as we should control IQ and SES for population stratification. Another alternative is to just 
+# residualize the DV (IQ in this case), yet this erronously leads to over conservative PGS & SES effect sizes
+# The original PC paper (Price 2006 Nat Gen), residualizes the phenotype(IQ or SES in this case) & genotype (cog-PGS)
+# This method is the most similar to just adding the covariates, yet we would have to listwise delete anyways to do that.
+# This is a shitty situation that effects SEM approaches with FIML as well.
+
+
 # cryst_imp <- imp_3way(cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
 # fluid_imp <- imp_3way(fluid_data_pca[, c("site_id_l", "nihtbx_fluidcomp_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
 # list_imp <- imp_3way(list_data_pca[, c("site_id_l", "nihtbx_list_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
@@ -376,274 +387,83 @@ summary(lm(reshist_addr1_adi_wsum.s ~ missing_PGS, data = cog))
 
 # crystalized IQ
 
+# 
+# cryst_data_pca.complete <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), 
+#                                                 data = cryst_data_pca.complete)
+# 
+# # standardizing vars
+# cols <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "pgs_unRes", "ses_unRes", "C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
+# cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
+# 
+
+
+
+
 cy_1 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
                        data = cryst_data_pca.complete, REML = F)
 
-cy_2 <- lme4::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + (1 | site_id_l),
-                       data = cryst_data_pca.complete, REML = F) # adding sex
-
-
-# 
-# cy_mm2.1 <- lme4::lmer(nihtbx_cryst_uncorrected ~ age_yrs + sex + schooling_yrs + pgs + (1 | site_id_l), 
-#                        data = cryst_data_pca.complete, REML = F)  # adding pgs
-
-
-
-#################### #################### #################### #################### #################### #################### 
-#################### play space #################### #################### #################### #################### 
-#################### #################### #################### #################### #################### ##########
-
-
-
-cryst_data_pca.complete <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), 
-                                                data = cryst_data_pca.complete)
-
-# standardizing vars
-cols <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "pgs_unRes", "ses_unRes", "C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
-cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
-
-
-
-cy_mm2.2_allRes <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs  + pgs + ses + (1 | site_id_l), # controling interactions Keller 2014
-                           data = cryst_data_pca.complete, REML = F)
-
-cy_mm2.2_ALLunRes <- lmerTest::lmer(nihtbx_cryst_uncorrected_unRes ~ age_yrs_unRes + schooling_yrs_unRes  + pgs_unRes + ses_unRes + 
-                             C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 +(1 | site_id_l), # controling interactions Keller 2014
-                           data = cryst_data_pca.complete, REML = F)
-
-cy_mm2.2_DVres <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs_unRes + schooling_yrs_unRes  + pgs_unRes + ses_unRes + (1 | site_id_l), # controling interactions Keller 2014
-                           data = cryst_data_pca.complete, REML = F)
-
-cy_mm2.2_PGSres <- lmerTest::lmer(nihtbx_cryst_uncorrected_unRes ~ age_yrs_unRes + schooling_yrs_unRes  + pgs + ses_unRes + (1 | site_id_l), # controling interactions Keller 2014
-                                 data = cryst_data_pca.complete, REML = F)
-
-
-
-
-################### now with one PC
-
-
-# standardizing vars
-cols <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "pgs_unRes", "ses_unRes")
-cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
-
-
-cryst_data_pca.complete <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1"), 
-                                                data = cryst_data_pca.complete)
-
-# standardizing vars
-cols <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "pgs_unRes", "ses_unRes")
-cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
-
-
-
-cy_mm2.2_allRes <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs  + pgs + ses + (1 | site_id_l), # controling interactions Keller 2014
-                                  data = cryst_data_pca.complete, REML = F)
-
-cy_mm2.2_ALLunRes <- lmerTest::lmer(nihtbx_cryst_uncorrected_unRes ~ age_yrs_unRes + schooling_yrs_unRes  + pgs_unRes + ses_unRes + 
-                                      C1 + (1 | site_id_l), # controling interactions Keller 2014
-                                    data = cryst_data_pca.complete, REML = F)
-
-cy_mm2.2_DVres <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs_unRes + schooling_yrs_unRes  + pgs_unRes + ses_unRes + (1 | site_id_l), # controling interactions Keller 2014
-                                 data = cryst_data_pca.complete, REML = F)
-
-cy_mm2.2_PGSres <- lmerTest::lmer(nihtbx_cryst_uncorrected_unRes ~ age_yrs_unRes + schooling_yrs_unRes  + pgs + ses_unRes + (1 | site_id_l), # controling interactions Keller 2014
-                                  data = cryst_data_pca.complete, REML = F)
-
-
-
-
-cor(cryst_data_pca.complete$nihtbx_cryst_uncorrected, cryst_data_pca.complete$pgs)
-cor(cryst_data_pca.complete$nihtbx_cryst_uncorrected, cryst_data_pca.complete$pgs_unRes)
-cor(cryst_data_pca.complete$nihtbx_cryst_uncorrected_unRes, cryst_data_pca.complete$pgs)
-
-
-
-
-
-
-
-
-
-####################
-
-
-
-cryst_data_pca.complete$nihtbx_cryst_uncorrected <- cryst_data_pca.complete$nihtbx_cryst_uncorrected_unRes
-cryst_data_pca.complete$pgs <- cryst_data_pca.complete$pgs_unRes
-cryst_data_pca.complete$ses <- cryst_data_pca.complete$ses_unRes
-
-cryst_data_pca.complete <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "pgs"), c("ses"), data = cryst_data_pca.complete)
-
-# standardizing vars
-cols <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "pgs_unRes", "ses_unRes")
-cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
-
-
-
-
-lm(nihtbx_cryst_uncorrected ~ pgs, data= cryst_data_pca.complete)
-lm(nihtbx_cryst_uncorrected ~ pgs_unRes, data= cryst_data_pca.complete)
-
-lm(nihtbx_cryst_uncorrected_unRes ~ pgs_unRes + ses_unRes, data= cryst_data_pca.complete)
-
-lm(nihtbx_cryst_uncorrected_unRes ~ pgs, data= cryst_data_pca.complete)
-
-cy_mm2.2 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ pgs + (1 | site_id_l), # controling interactions Keller 2014
-                           data = cryst_data_pca.complete, REML = F)
-
-
-
-cy_mm2.2_unRes <- lmerTest::lmer(nihtbx_cryst_uncorrected_unRes ~ age_yrs_unRes + schooling_yrs_unRes  + pgs_unRes + ses_unRes + 
-                             C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l), # controling interactions Keller 2014
-                           data = cryst_data_pca.complete, REML = F)
-
-
-
-
-
-
-
-
-
-#################### #################### #################### #################### #################### ####################
-#################### #################### #################### #################### #################### #################### 
-#################### #################### #################### #################### #################### #################### 
-
-
-
-summary(cy_mm2.2)
-cy_mm2.2_imp <- with(cryst_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(cy_mm2.2_imp))
-
-# cy_mm3.1 <- lme4::lmer(nihtbx_cryst_uncorrected ~ age_yrs + sex + schooling_yrs*pgs + ses + (1 | site_id_l), 
-#                        data = cryst_data_pca.complete, REML = F) # adding interaction PGS
-# cy_mm3.2 <- lme4::lmer(nihtbx_cryst_uncorrected ~ age_yrs + sex + schooling_yrs*ses + pgs + (1 | site_id_l), 
-#                        data = cryst_data_pca.complete, REML = F) # adding interaction SES
-
-# two way interactions, controlling for two-way age (this brought the B schooling*SES and schooling*PGS down; classic Keller 2014 potential false positive)
-# cy_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_cryst_uncorrected ~ age_yrs + sex + schooling_yrs + ses + pgs + 
-#                               schooling_yrs:ses + schooling_yrs:pgs + pgs:ses + (1 | site_id_l), # controling interactions Keller 2014
-#                             data = cryst_data_pca.complete, REML = F) # adding interaction SES
-
-cy_mm4_no3way <- lme4::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                              pgs:ses + schooling_yrs:pgs + schooling_yrs:ses +
-                              age_yrs:pgs + age_yrs:ses + (1 | site_id_l), # controling interactions Keller 2014
-                            data = cryst_data_pca.complete, REML = F) # adding interaction SES
-
-
-cy_mm4_no3way <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                              pgs:ses + schooling_yrs:pgs + schooling_yrs:ses +
-                              age_yrs:pgs + age_yrs:ses  + (1 | site_id_l), # controling interactions Keller 2014
-                            data = cryst_data_pca.complete, REML = F)
-
-cy_mm4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                       pgs:ses + schooling_yrs:pgs + schooling_yrs:ses +
-                       age_yrs:pgs + age_yrs:ses + # controling interactions Keller 2014
-                       schooling_yrs:ses:pgs + (1 | site_id_l), # controling interactions Keller 2014
-                     data = cryst_data_pca.complete, REML = F) # adding interaction SES
-
-anova(cy_mm4, cy_mm4_no3way)
-
-cy_mm4_no3way_imp <- with(cryst_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
-                                            (1 | site), REML = FALSE))
-
-cy_mm4_imp <- with(cryst_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
-                                     ses:pgs:school + (1 | site), REML = FALSE))
-
-D3(cy_mm4_imp, cy_mm4_no3way_imp) # summary(pool(cy_mm4_imp))
+cy_2 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F) 
+
+# adding the two way interactions of interest schoolingXpgs, schoolingXses & pgsXses
+cy_3 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                   data = cryst_data_pca.complete, REML = F) 
+
+# adding the 3way interaction
+cy_4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                     schooling_yrs:ses:pgs + 
+                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                   data = cryst_data_pca.complete, REML = F) 
 
 # fluid IQ
-# fi_mm1.1 <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l), 
-#                        data = fluid_data_pca.complete, REML = F)
- fi_mm1.2 <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + (1 | site_id_l),
-                        data = fluid_data_pca.complete, REML = F) # adding sex
-# fi_mm2.1 <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + sex + schooling_yrs + pgs + (1 | site_id_l), 
-#                        data = fluid_data_pca.complete, REML = F) # adding pgs 
 
-fi_mm2.2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                             C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l), # controling interactions Keller 2014
-                       data = fluid_data_pca.complete, REML = F) # adding SES 
-summary(fi_mm2.2)
-fi_mm2.2_imp <- with(fluid_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(fi_mm2.2_imp))
+fi_1 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F)
 
-# fi_mm3.1 <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + sex + schooling_yrs*pgs + ses + (1 | site_id_l), 
-#                        data = fluid_data_pca.complete, REML = F) # adding schooling pgs INTERACTION
-# fi_mm3.2 <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + sex + schooling_yrs*ses + pgs + (1 | site_id_l), 
-#                        data = fluid_data_pca.complete, REML = F) # adding schooling SES INTERACTION
-# fi_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-#                                            pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + 
-#                                            (1 | site_id_l), data = fluid_data_pca.complete, REML = F)
+fi_2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                   data = cryst_data_pca.complete, REML = F) 
 
+# adding the two way interactions of interest schoolingXpgs, schoolingXses & pgsXses
+fi_3 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                   data = cryst_data_pca.complete, REML = F) 
 
-fi_mm4_no3way <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                              pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + 
-                              age_yrs:pgs + age_yrs:ses + (1 | site_id_l), 
-                            data = fluid_data_pca.complete, REML = F)
-
-fi_mm4 <- lme4::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                       pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + 
-                       age_yrs:pgs + age_yrs:ses + 
-                       schooling_yrs:ses:pgs + (1 | site_id_l), 
-                     data = fluid_data_pca.complete, REML = F)
-
-anova(fi_mm4, fi_mm4_no3way)
-
-fi_mm4_no3way_imp <- with(fluid_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
-                                            (1 | site), REML = FALSE))
-
-fi_mm4_imp <- with(fluid_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
-                                     ses:pgs:school + (1 | site), REML = FALSE))
-
-D3(fi_mm4_imp, fi_mm4_no3way_imp) # summary(pool(fi_mm4_imp))
-
+# adding the 3way interaction
+fi_4 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                     schooling_yrs:ses:pgs + 
+                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                   data = cryst_data_pca.complete, REML = F) 
 
 # for list sorting
-# list_mm1.1 <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l), 
-#                          data = list_data_pca.complete, REML = F)
-list_mm1.2 <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + (1 | site_id_l),
-                          data = list_data_pca.complete, REML = F)
-# 
-# list_mm2.1 <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + sex + schooling_yrs + pgs + (1 | site_id_l), 
-#                          data = list_data_pca.complete, REML = F)
 
-list_mm2.2 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + (1 | site_id_l), 
-                         data = list_data_pca.complete, REML = F)
-summary(list_mm2.2)
-list_mm2.2_imp <- with(list_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(list_mm2.2_imp))
+list_1 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F)
 
+list_2 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F) 
 
-# list_mm3.1 <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + sex + schooling_yrs*pgs + ses + (1 | site_id_l), 
-#                          data = list_data_pca.complete, REML = F)
-# list_mm3.2 <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + sex + schooling_yrs*ses + pgs + (1 | site_id_l), 
-#                          data = list_data_pca.complete, REML = F)
+# adding the two way interactions of interest schoolingXpgs, schoolingXses & pgsXses
+list_3 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F) 
 
-# list_mm4_no3way_noagecontrol <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + sex + schooling_yrs + ses + pgs + 
-#                                 schooling_yrs:ses + schooling_yrs:pgs + pgs:ses + (1 | site_id_l), 
-#                               data = list_data_pca.complete, REML = F) # adding interaction SES
+# adding the 3way interaction
+list_4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                         schooling_yrs:ses:pgs + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F) 
 
 
-list_mm4_no3way <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                                pgs:ses + schooling_yrs:pgs + schooling_yrs:ses +  
-                                age_yrs:pgs + age_yrs:ses + (1 | site_id_l), 
-                            data = list_data_pca.complete, REML = F) # adding interaction SES
-
-list_mm4 <- lme4::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses +  
-                         age_yrs:pgs + age_yrs:ses + 
-                         schooling_yrs:ses:pgs + (1 | site_id_l), 
-                       data = list_data_pca.complete, REML = F) # adding interaction SES
-anova(list_mm4, list_mm4_no3way)
-
-
-list_mm4_no3way_imp <- with(list_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + (1 | site), REML = FALSE))
-
-
-list_mm4_imp <- with(list_imp, lmer(dv ~ 1 + age + school + sex + pgs + ses + pgs:ses + pgs:school + ses:school + age:pgs + age:ses + 
-                                      ses:pgs:school + (1 | site), REML = FALSE))
-D3(list_mm4_imp, list_mm4_no3way_imp) # summary(pool(list_mm4_imp))
 
 ##################################################################
 ########### SES subcomponent analysis ########### 
