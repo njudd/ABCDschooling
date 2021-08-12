@@ -396,9 +396,6 @@ summary(lm(reshist_addr1_adi_wsum.s ~ missing_PGS, data = cog))
 # cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
 # 
 
-
-
-
 cy_1 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
                        data = cryst_data_pca.complete, REML = F)
 
@@ -468,72 +465,6 @@ list_4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex
 ##################################################################
 ########### SES subcomponent analysis ########### 
 
-# imputations are commented off since they take forever...
-# #imp cryst
-# cryst_imp_par <- imp_3way(cog[, c("site_id_l", "nihtbx_cryst_uncorrected", "ParEd_max.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# cryst_imp_income <- imp_3way(cog[, c("site_id_l", "nihtbx_cryst_uncorrected", "demo_comb_income_v2.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# cryst_imp_neigh <- imp_3way(cog[, c("site_id_l", "nihtbx_cryst_uncorrected", "reshist_addr1_adi_wsum.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# #imp fluid
-# fluid_imp_par <- imp_3way(cog[, c("site_id_l", "nihtbx_fluidcomp_uncorrected", "ParEd_max.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# fluid_imp_income <- imp_3way(cog[, c("site_id_l", "nihtbx_fluidcomp_uncorrected", "demo_comb_income_v2.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# fluid_imp_neigh <- imp_3way(cog[, c("site_id_l", "nihtbx_fluidcomp_uncorrected", "reshist_addr1_adi_wsum.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# #imp list
-# list_imp_par <- imp_3way(cog[, c("site_id_l", "nihtbx_list_uncorrected", "ParEd_max.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# list_imp_income <- imp_3way(cog[, c("site_id_l", "nihtbx_list_uncorrected", "demo_comb_income_v2.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-# list_imp_neigh <- imp_3way(cog[, c("site_id_l", "nihtbx_list_uncorrected", "reshist_addr1_adi_wsum.s", "pgs", "age_yrs", "schooling_yrs", "sex")])
-
-# analysis cryst subcomp
-cy_mm2.2_imp_par <- with(cryst_imp_par, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(cy_mm2.2_imp_par))[6,]
-cy_mm2.2_imp_income <- with(cryst_imp_income, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(cy_mm2.2_imp_income))[6,]
-cy_mm2.2_imp_neigh <- with(cryst_imp_neigh, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(cy_mm2.2_imp_neigh))[6,]
-
-# analysis fluid subcomp
-fi_mm2.2_imp_par <- with(fluid_imp_par, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(fi_mm2.2_imp_par))[6,]
-fi_mm2.2_imp_income <- with(fluid_imp_income, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(fi_mm2.2_imp_income))[6,]
-fi_mm2.2_imp_neigh <- with(fluid_imp_neigh, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(fi_mm2.2_imp_neigh))[6,]
-
-# analysis list subcomp
-list_mm2.2_imp_par <- with(list_imp_par, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(list_mm2.2_imp_par))[6,]
-list_mm2.2_imp_income <- with(list_imp_income, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(list_mm2.2_imp_income))[6,]
-list_mm2.2_imp_neigh <- with(list_imp_neigh, lmer(dv ~ 1 + age + sex + school + pgs + ses + (1 | site), REML = FALSE))
-summary(pool(list_mm2.2_imp_neigh))[6,]
-
-# for the interaction, when sig only looking at the term that shows for the composite (yet ofc still controlling for everything else)
-
-# cryst
-# cy_fit_fixed_par <- with(cryst_imp_par, lmer(dv ~ 1 + age + school + sex + ses + pgs + (1 | site), REML = FALSE))
-cy_fit_inter_par <- with(cryst_imp_par, lmer(dv ~ 1 + age + school + sex + ses*pgs + school*ses + school*pgs + age*ses + age*pgs + (1 | site), REML = FALSE))
-summary(pool(cy_fit_inter_par))
-
-# cy_fit_fixed_income <- with(cryst_imp_income, lmer(dv ~ 1 + age + school + sex + ses + pgs + (1 | site), REML = FALSE))
-cy_fit_inter_income <- with(cryst_imp_income, lmer(dv ~ 1 + age + school + sex + ses*pgs + school*ses + school*pgs + age*ses + age*pgs + (1 | site), REML = FALSE))
-summary(pool(cy_fit_inter_income))
-
-# cy_fit_fixed_neigh <- with(cryst_imp_neigh, lmer(dv ~ 1 + age + school + sex + ses + pgs + (1 | site), REML = FALSE))
-cy_fit_inter_neigh <- with(cryst_imp_neigh, lmer(dv ~ 1 + age + school + sex + ses*pgs + school*ses + school*pgs + age*ses + age*pgs + (1 | site), REML = FALSE))
-summary(pool(cy_fit_inter_neigh))
-
-# fluid
-# fi_fit_fixed_par <- with(fluid_imp_par, lmer(dv ~ 1 + age + school + sex + ses + pgs + (1 | site), REML = FALSE))
-fi_fit_inter_par <- with(fluid_imp_par, lmer(dv ~ 1 + age + school + sex + ses*pgs + school*ses + school*pgs + age*ses + age*pgs + (1 | site), REML = FALSE))
-summary(pool(fi_fit_inter_par))
-
-# fi_fit_fixed_income <- with(fluid_imp_income, lmer(dv ~ 1 + age + school + sex + ses + pgs + (1 | site), REML = FALSE))
-fi_fit_inter_income <- with(fluid_imp_income, lmer(dv ~ 1 + age + school + sex + ses*pgs + school*ses + school*pgs + age*ses + age*pgs + (1 | site), REML = FALSE))
-summary(pool(fi_fit_inter_income))
-
-
-# fi_fit_fixed_neigh <- with(fluid_imp_neigh, lmer(dv ~ 1 + age + school + sex + ses + pgs + (1 | site), REML = FALSE))
-fi_fit_inter_neigh <- with(fluid_imp_neigh, lmer(dv ~ 1 + age + school + sex + ses*pgs + school*ses + school*pgs + age*ses + age*pgs + (1 | site), REML = FALSE))
-summary(pool(fi_fit_inter_neigh))
 
 ##################################################################
 ########### SI tables & results ########### 
