@@ -241,24 +241,6 @@ cog$twoormore[cog$twoormore>1] <- 1
 # sum(cog$twoormore) # 46 subjects, matches md pattern above
 cog$ses[cog$twoormore==1] <- NA # making them NA
 
-# residualizing the DV's based on the PCs, this will throw out cognitive data of those missing genetics
-# yet there is no perfect solution (without listwise deletion), and even if you were to use SEM with fiml you would be estimating missing data using other data with population stratification
-# the reason I can't make a MICE imputation with it is because all the PCs are orthogonal, there's MICE doesn't work... because ofc you can't estimate P1 ~ P2 + P3 etc..
-# there singular matrix warning comes up. I wasted a day before I relized this issue.
-
-cog$nihtbx_cryst_uncorrected_unRes <- cog$nihtbx_cryst_uncorrected
-cog$pgs_unRes <- cog$pgs
-cog$ses_unRes <- cog$ses
-cog$age_yrs_unRes <- cog$age_yrs
-cog$schooling_yrs_unRes <- cog$schooling_yrs
-
-# cog <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), data = cog)
-# 
-# # standardizing vars
-# cols <- c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes")
-# cog[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
-
-
 ##################################################################
 ########### plotting descript (not essential to run) ###########  ###### 
 
@@ -319,9 +301,8 @@ fluid_data_pca <- cog[, .(nihtbx_fluidcomp_uncorrected,
                           ses, pgs, subjectkey)]#[
                         #    !is.na(nihtbx_fluidcomp_uncorrected)] # removes 147 (>2%)
                           
-cryst_data_pca <- cog[, .(nihtbx_cryst_uncorrected, nihtbx_cryst_uncorrected_unRes,
+cryst_data_pca <- cog[, .(nihtbx_cryst_uncorrected,
                             schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                          schooling_yrs_unRes, age_yrs_unRes, ses_unRes, pgs_unRes,
                           C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20,
                             ses, pgs, subjectkey)]#[
                          #     !is.na(nihtbx_cryst_uncorrected)] # removes 115 (~1.5%)
@@ -343,7 +324,7 @@ list_data_pca.complete <- na.omit(list_data_pca)
 
 # standardizing based on complete cases
 
-cols <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "ses_unRes", "pgs_unRes")
+cols_cy <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "ses_unRes", "pgs_unRes")
 # fluid_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
 cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
 # list_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
@@ -359,6 +340,7 @@ cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))
 # The original PC paper (Price 2006 Nat Gen), residualizes the phenotype(IQ or SES in this case) & genotype (cog-PGS)
 # This method is the most similar to just adding the covariates, yet we would have to listwise delete anyways to do that.
 # This is a shitty situation that effects SEM approaches with FIML as well.
+# cog <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), data = cog)
 
 
 # cryst_imp <- imp_3way(cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
