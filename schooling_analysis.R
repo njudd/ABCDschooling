@@ -243,6 +243,7 @@ cog$twoormore[cog$twoormore>1] <- 1
 # sum(cog$twoormore) # 46 subjects, matches md pattern above
 cog$ses[cog$twoormore==1] <- NA # making them NA
 
+
 ##################################################################
 ########### plotting descript (not essential to run) ###########  ###### 
 
@@ -498,12 +499,74 @@ list_2_neigh <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs
 ########### Bayesian analysis for 2way interactions ###########
 
 
-library(brms) 
+library(brms); library(bayestestR)
 
-cy_3_bayes <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+
+options(buildtools.check = function(action) TRUE )
+
+
+
+cy_2_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                  data = cryst_data_pca.complete) 
+
+cy_3_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                          pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                       data = cryst_data_pca.complete, REML = F) 
+                       data = cryst_data_pca.complete) 
+
+cy_3_bayes_rope.08 <- rope(cy_3_bayes, range =  c(-0.08, 0.08))
+cy_3_bayes_rope.05 <- rope(cy_3_bayes, range =  c(-0.05, 0.05))
+cy_3_bayes_rope.02 <- rope(cy_3_bayes, range =  c(-0.02, 0.02))
+
+plot(cy_3_bayes_rope.08, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+plot(cy_3_bayes_rope.05, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+plot(cy_3_bayes_rope.02, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+
+
+
+
+
+fi_3_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                  data = fluid_data_pca.complete) 
+
+
+
+
+sum_rope <- rope(fi_3_bayes, range =  c(-0.08, 0.08), parameters = c("schooling_yrs", "ses", "pgs"))
+
+
+
+result <- rope(model, ci = c(0.9, 0.95))
+
+
+plot(fa_rope, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+
+
+
+
+
+bayestestR::rope(fi_3_bayes, range =  c(-0.08, 0.08))
+bayestestR::rope(fi_3_bayes, range =  c(-0.05, 0.05))
+bayestestR::rope(fi_3_bayes, range =  c(-0.02, 0.02))
+
+
+
+# compare this one with a sum score to a fluid EFA
+bayestestR::rope(fi_3_bayes, range =  c(-0.02, 0.02))
+
+
+
+list_3_bayes <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                  data = list_data_pca.complete) 
 
 
 
