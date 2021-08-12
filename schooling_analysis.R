@@ -221,13 +221,15 @@ cog$nihtbx_fluidcomp_uncorrected <- vec_to_fence(cog$nihtbx_fluidcomp_uncorrecte
 cog$nihtbx_cryst_uncorrected <- vec_to_fence(cog$nihtbx_cryst_uncorrected)
 cog$nihtbx_list_uncorrected <- vec_to_fence(cog$nihtbx_list_uncorrected)
 
-# gonna do probabilitics PCA to get the SES PCA scores and than MICE for the other values
-cog$ParEd_max.s <- as.numeric(scale(cog$ParEd_max))
-cog$demo_comb_income_v2.s <- as.numeric(scale(cog$demo_comb_income_v2))
-cog$reshist_addr1_adi_wsum.s <- as.numeric(scale(cog$reshist_addr1_adi_wsum))
+# scaling the SES components
+cols_ses <- c("ParEd_max", "demo_comb_income_v2", "reshist_addr1_adi_wsum")
+cog[, (cols_ses) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_ses]
 
+cog$reshist_addr1_adi_wsum <- -cog$reshist_addr1_adi_wsum # neighborhood deprivation is now called neighborhood quality
+
+# gonna do probabilitics PCA to get the SES PCA scores and than MICE for the other values
 # mice::md.pattern(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)], plot = F)
-cog$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)]), nPcs = 1, seed = 42)@loadings)
+cog$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog[, .(ParEd_max, demo_comb_income_v2, reshist_addr1_adi_wsum)]), nPcs = 1, seed = 42)@loadings)
 # ppca has a .999 correlation for the non-missing values with normal pca
 
 # I am now finding subject that were missing more than 1 value for the 3 SES categories
@@ -296,21 +298,19 @@ cog$ses[cog$twoormore==1] <- NA # making them NA
 
 ##################################################################
 ########### model datasets ########### 
-fluid_data_pca <- cog[, .(nihtbx_fluidcomp_uncorrected,
-                          schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                          ses, pgs, subjectkey)]#[
-                        #    !is.na(nihtbx_fluidcomp_uncorrected)] # removes 147 (>2%)
-                          
+
 cryst_data_pca <- cog[, .(nihtbx_cryst_uncorrected,
-                            schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
+                          schooling_yrs, age_yrs, site_id_l, sex,
                           C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20,
-                            ses, pgs, subjectkey)]#[
-                         #     !is.na(nihtbx_cryst_uncorrected)] # removes 115 (~1.5%)
-                            
+                          ses, pgs, subjectkey)]
+fluid_data_pca <- cog[, .(nihtbx_fluidcomp_uncorrected,
+                          schooling_yrs, age_yrs, site_id_l, sex,
+                          C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20,
+                          ses, pgs, subjectkey)]
 list_data_pca <- cog[, .(nihtbx_list_uncorrected,
-                            schooling_yrs, age_yrs, site_id_l, sex, #subjectkey,
-                            ses, pgs, subjectkey)]#[
-                    #          !is.na(nihtbx_list_uncorrected)] # removes 115 (~1.5%)
+                         schooling_yrs, age_yrs, site_id_l, sex,
+                         C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20,
+                         ses, pgs, subjectkey)]
                              
 # checking patterns of missingness
 # mice::md.pattern(fluid_data_pca, plot = F)
@@ -318,19 +318,22 @@ list_data_pca <- cog[, .(nihtbx_list_uncorrected,
 # mice::md.pattern(list_data_pca, plot = F)
 
 # making dfs with complete cases
-fluid_data_pca.complete <- na.omit(fluid_data_pca)
 cryst_data_pca.complete <- na.omit(cryst_data_pca)
+fluid_data_pca.complete <- na.omit(fluid_data_pca)
 list_data_pca.complete <- na.omit(list_data_pca)
 
 # standardizing based on complete cases
 
-cols_cy <- c("nihtbx_cryst_uncorrected", "pgs", "ses", "nihtbx_cryst_uncorrected_unRes", "ses_unRes", "pgs_unRes")
-# fluid_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
-cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
-# list_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
+common_cols <- c("pgs", "ses", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
+cols_cy <- c("nihtbx_cryst_uncorrected", common_cols)
+cols_fi <- c("nihtbx_fluidcomp_uncorrected", common_cols)
+cols_list <- c("nihtbx_list_uncorrected", common_cols)
 
-# making dfs with imputed data (uncomment to get imputation results)
+cryst_data_pca.complete[, (cols_cy) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_cy]
+fluid_data_pca.complete[, (cols_fi) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_fi]
+list_data_pca.complete[, (cols_list) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_list]
 
+# IMPUTATION NOTES
 # very sad; it is impossible to impute with PCs. They are orthogonal, therefore loads of singularity warnings
 # and eventually stops working with higher PCs.
 # There is no perfect sollution to this so I will sadly just list this as a limitation
@@ -342,7 +345,7 @@ cryst_data_pca.complete[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))
 # This is a shitty situation that effects SEM approaches with FIML as well.
 # cog <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), data = cog)
 
-
+# making dfs with imputed data (uncomment to get imputation results)
 # cryst_imp <- imp_3way(cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
 # fluid_imp <- imp_3way(fluid_data_pca[, c("site_id_l", "nihtbx_fluidcomp_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
 # list_imp <- imp_3way(list_data_pca[, c("site_id_l", "nihtbx_list_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
@@ -359,6 +362,10 @@ summary(lm(ParEd_max.s ~ missing_PGS, data = cog))
 
 effectsize::cohens_d(reshist_addr1_adi_wsum.s ~ missing_PGS, data = cog)
 summary(lm(reshist_addr1_adi_wsum.s ~ missing_PGS, data = cog))
+
+# I don't think that this MAR missingness will substantially change the data, because I think its site DNA only missingness
+# sites are not SES representative. Also I did the whole imputation accidently without genetic PCs and the main effect results
+# where almost the exact same...
 
 ##################################################################
 ########### Analysis: fitting models ########### 
@@ -401,51 +408,113 @@ cy_4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex 
 # fluid IQ
 
 fi_1 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
-                       data = cryst_data_pca.complete, REML = F)
+                       data = fluid_data_pca.complete, REML = F)
 
 fi_2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                   data = cryst_data_pca.complete, REML = F) 
+                   data = fluid_data_pca.complete, REML = F) 
 
 # adding the two way interactions of interest schoolingXpgs, schoolingXses & pgsXses
 fi_3 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                      pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                   data = cryst_data_pca.complete, REML = F) 
+                   data = fluid_data_pca.complete, REML = F) 
 
 # adding the 3way interaction
 fi_4 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                      pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                      schooling_yrs:ses:pgs + 
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                   data = cryst_data_pca.complete, REML = F) 
+                   data = fluid_data_pca.complete, REML = F) 
 
 # for list sorting
 
 list_1 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
-                       data = cryst_data_pca.complete, REML = F)
+                       data = list_data_pca.complete, REML = F)
 
 list_2 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                       data = cryst_data_pca.complete, REML = F) 
+                       data = list_data_pca.complete, REML = F) 
 
 # adding the two way interactions of interest schoolingXpgs, schoolingXses & pgsXses
 list_3 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                          pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                       data = cryst_data_pca.complete, REML = F) 
+                       data = list_data_pca.complete, REML = F) 
 
 # adding the 3way interaction
 list_4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                          pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                          schooling_yrs:ses:pgs + 
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                       data = cryst_data_pca.complete, REML = F) 
+                       data = list_data_pca.complete, REML = F) 
 
 
 
 ##################################################################
-########### SES subcomponent analysis ########### 
+########### SES subcomponent analysis ###########
+
+
+cols_Scale<- c(common_cols, "nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected")
+cog[, (cols_Scale) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_Scale]
+
+psych::describe(cog)
+
+cy_2_income <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + demo_comb_income_v2 + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog, REML = F) 
+cy_2_ParEd <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ParEd_max + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog, REML = F) 
+cy_2_neigh <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + reshist_addr1_adi_wsum + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog, REML = F) 
+
+
+fi_2_income <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + demo_comb_income_v2 + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog, REML = F) 
+fi_2_ParEd <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ParEd_max + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog, REML = F) 
+fi_2_neigh <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + reshist_addr1_adi_wsum + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog, REML = F) 
+
+list_2_income <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + demo_comb_income_v2 + 
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = cog, REML = F) 
+list_2_ParEd <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ParEd_max + 
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = cog, REML = F) 
+list_2_neigh <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + reshist_addr1_adi_wsum + 
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = cog, REML = F) 
+
+
+
+
+##################################################################
+########### Bayesian analysis for 2way interactions ###########
+
+
+library(brms) 
+
+cy_3_bayes <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cryst_data_pca.complete, REML = F) 
+
+
+
+
+# end goal make a plot for the 3 interaction terms of interest, with 3 bars of effect size .1, .05 & .02.
+
+
+
+
+
+
 
 
 ##################################################################
