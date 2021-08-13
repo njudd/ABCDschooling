@@ -300,6 +300,15 @@ cog$ses[cog$twoormore==1] <- NA # making them NA
 ##################################################################
 ########### model datasets ########### 
 
+
+
+cog_complete <- cog[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
+                          schooling_yrs, age_yrs, site_id_l, sex,
+                          C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20,
+                          ses, pgs, subjectkey)]
+cog_complete <- na.omit(cog_complete)
+
+
 cryst_data_pca <- cog[, .(nihtbx_cryst_uncorrected,
                           schooling_yrs, age_yrs, site_id_l, sex,
                           C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20,
@@ -515,20 +524,53 @@ cy_3_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                        data = cryst_data_pca.complete) 
 
+cy_4_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                    schooling_yrs:ses:pgs +
+                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                  data = cryst_data_pca.complete) 
+
+Not_years <- c("age_yrs", "schooling_yrs")
+cryst_data_pca.complete[, (Not_years) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=Not_years]
+
+
+cy_3_bayes.s <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                  data = cryst_data_pca.complete) 
+
 cy_3_bayes_rope.08 <- rope(cy_3_bayes, range =  c(-0.08, 0.08))
-cy_3_bayes_rope.05 <- rope(cy_3_bayes, range =  c(-0.05, 0.05))
+cy_3_bayes_rope.08.s <- rope(cy_3_bayes.s, range =  c(-0.08, 0.08))
+
+cy_3_bayes_rope.05 <- rope(cy_2_bayes, range =  c(-0.05, 0.05))
+cy_3_bayes_rope.05.s <- rope(cy_3_bayes.s, range =  c(-0.05, 0.05))
+
 cy_3_bayes_rope.02 <- rope(cy_3_bayes, range =  c(-0.02, 0.02))
+cy_3_bayes_rope.02.s <- rope(cy_3_bayes.s, range =  c(-0.02, 0.02))
 
 plot(cy_3_bayes_rope.08, rope_color = "red") +
   scale_fill_brewer(palette = "Greens", direction = -1)
+plot(cy_3_bayes_rope.08.s, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+
 plot(cy_3_bayes_rope.05, rope_color = "red") +
   scale_fill_brewer(palette = "Greens", direction = -1)
+plot(cy_3_bayes_rope.05.s, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+
 plot(cy_3_bayes_rope.02, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+plot(cy_3_bayes_rope.02.s, rope_color = "red") +
   scale_fill_brewer(palette = "Greens", direction = -1)
 
 
 
+Not_years <- c("age_yrs", "schooling_yrs")
+fluid_data_pca.complete[, (Not_years) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=Not_years]
 
+fi_2_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                  data = fluid_data_pca.complete) 
 
 fi_3_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
