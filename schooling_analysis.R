@@ -422,9 +422,6 @@ list_4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                        data = cog.complete, REML = F) 
 
-
-
-##################################################################
 ########### SES subcomponent analysis ###########
 
 cy_2_income <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + demo_comb_income_v2 + 
@@ -458,36 +455,105 @@ list_2_neigh <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs
                            C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                          data = cog.complete, REML = F) 
 
-##################################################################
 ########### Bayesian analysis for 2way interactions ###########
 
-
 library(brms); library(bayestestR); options(buildtools.check = function(action) TRUE )
+library(tidybayes); library(tidyverse)
 
-cy_2_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                  data = cog.complete) 
+# EVERYTHING, including schooling and age must be standardized for these comparisons to make sense.
+
+
+# http://mjskay.github.io/tidybayes/articles/tidy-brms.html
+
+
+# the goals is to make your own ROPE graph
+# https://easystats.github.io/bayestestR/articles/credible_interval.html claims you need to update the number of draws
+
 
 cy_3_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                          pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                        data = cog.complete) 
 
-cy_4_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
-                    schooling_yrs:ses:pgs +
-                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                  data = cog.complete) 
-
-
 cy_3_bayes_rope.08 <- rope(cy_3_bayes, range =  c(-0.08, 0.08))
-
-cy_3_bayes_rope.05 <- rope(cy_2_bayes, range =  c(-0.05, 0.05))
-
+cy_3_bayes_rope.05 <- rope(cy_3_bayes, range =  c(-0.05, 0.05))
 cy_3_bayes_rope.02 <- rope(cy_3_bayes, range =  c(-0.02, 0.02))
+
+
+
+"b_pgs:ses"                     "b_schooling_yrs:pgs"           "b_schooling_yrs:ses" 
+
+
+# get_variables(cy_3_bayes)
+cy_3_bayes %>%
+  gather_draws(`b_schooling_yrs:ses`, `b_schooling_yrs:pgs`, `b_pgs:ses`) %>%
+  ggplot(aes(y = .variable, x = .value)) +
+  geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),colour="red",alpha=0.05) +
+  geom_rect(aes(xmin=-.05,xmax=.05,ymin=-Inf,ymax=Inf),colour="red",alpha=0.1) +
+  geom_rect(aes(xmin=-.08,xmax=.08,ymin=-Inf,ymax=Inf),colour="red",alpha=0.15) +
+  stat_halfeye() +
+  geom_vline(xintercept = c(-.08, .08), linetype = "dashed") +
+  geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
+  geom_vline(xintercept = c(-.02, .02), linetype = "dashed") +
+  xlim(-.15, .15)+
+  theme_minimal()
+  
+  
+  
+  
+  
+  
+  
+  scale_fill_manual(values = c("gray80", "skyblue"))
+
+
+
+
+
+
 
 plot(cy_3_bayes_rope.08, rope_color = "red") +
   scale_fill_brewer(palette = "Greens", direction = -1)
+
+
+
+
+
+
+
+
+cy_rope <- as.data.table(cy_3_bayes_rope.08)[27:29,c(1,2,5)][
+  as.data.table(cy_3_bayes_rope.05)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+    as.data.table(cy_3_bayes_rope.02)[27:29,c(1,2,5)], on = c("Parameter", "CI")]
+colnames(cy_rope)[3:5] <- c("ROPE .08", "ROPE .05", "ROPE .02")
+
+# a first step to check the assumptions of this hypothesis testing is to look at different pair plots. 
+# An even more sophisticated check is the projection predictive variable selection (Piironen and Vehtari 2017).
+
+fi_3_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                  data = cog.complete) 
+
+fi_3_bayes_rope.08 <- rope(fi_3_bayes, range =  c(-0.08, 0.08))
+fi_3_bayes_rope.05 <- rope(fi_3_bayes, range =  c(-0.05, 0.05))
+fi_3_bayes_rope.02 <- rope(fi_3_bayes, range =  c(-0.02, 0.02))
+
+list_3_bayes <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                      pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                    data = cog.complete) 
+
+list_3_bayes_rope.08 <- rope(fi_3_bayes, range =  c(-0.08, 0.08))
+list_3_bayes_rope.05 <- rope(fi_3_bayes, range =  c(-0.05, 0.05))
+list_3_bayes_rope.02 <- rope(fi_3_bayes, range =  c(-0.02, 0.02))
+
+
+
+
+plot(cy_3_bayes_rope.08, rope_color = "red") +
+  scale_fill_brewer(palette = "Greens", direction = -1)
+
 plot(cy_3_bayes_rope.05, rope_color = "red") +
   scale_fill_brewer(palette = "Greens", direction = -1)
 
@@ -498,10 +564,6 @@ fi_2_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex +
                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                   data = cog.complete) 
 
-fi_3_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
-                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                  data = cog.complete) 
 
 
 
@@ -531,10 +593,7 @@ bayestestR::rope(fi_3_bayes, range =  c(-0.02, 0.02))
 
 
 
-list_3_bayes <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
-                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                  data = list_data_pca.complete) 
+
 
 
 
