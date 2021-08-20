@@ -10,7 +10,8 @@
 
 setwd("~/Projects/R_projects/ABCDschooling/")
 source("~/Projects/R_projects/ABCDschooling/funcs/vec_to_fence.R")
-library(data.table)
+library(data.table); 
+options(scipen = 999); set.seed(42)
 
 # twins
 # https://www.biorxiv.org/content/10.1101/2020.02.10.942011v1.full.pdf
@@ -65,11 +66,10 @@ sibs <- sibs[!is.na(genetic_zygosity_status_1)][
 iq <- fread("sed -e '2d' data/abcd_tbss01.txt")[
   eventname == "baseline_year_1_arm_1"][
     , .(subjectkey, interview_date, interview_age, sex, 
-        nihtbx_list_agecorrected, nihtbx_fluidcomp_agecorrected, nihtbx_cryst_agecorrected)][
+        nihtbx_list_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected)][
           ]
 
 sibs <- iq[sibs, on = "subjectkey"]
-
 
 ses <- fread("sed -e '2d' data/StudySiteBLgrade/pdem02.txt")[
   , .(subjectkey, demo_comb_income_v2, demo_prnt_ed_v2, demo_prtnr_ed_v2)] 
@@ -118,14 +118,13 @@ ses <- fread("sed -e '2d' data/abcd_rhds01.txt")[
 sibs <- ses[sibs, on = "subjectkey"]
 
 sibs$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(sibs[, .(ParEd_max, demo_comb_income_v2, reshist_addr1_adi_wsum)]), nPcs = 1, seed = 42)@loadings)
-sibs$ses <- as.numeric(scale(sibs$ses))
 
 sibs <- fread("data/abcd_pgs.txt")[sibs, on = "subjectkey"]
 sibs <- fread('data/pca_data_ethnicity_PC20.txt', fill = T)[,1:22][sibs, on = "subjectkey"] #[name == "White"]
 
 # so now I need to regress DVs and PGS from PC's
 # important: you do not rescale!
-dvs <- c("nihtbx_cryst_agecorrected", "nihtbx_fluidcomp_agecorrected", "nihtbx_list_agecorrected")
+dvs <- c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected")
 common_cols <- c(dvs, "pgs", "ses",
                  "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
 # subseting the main df
@@ -134,13 +133,11 @@ sibs <- sibs[sibs[, complete.cases(.SD), .SDcols = common_cols,]][
 ]
 
 
-sibs <- sibs[
-                   , pgs := pgs*10000 # scalling by 100 and adding 10 for subtractions
-                 ][
-                   , pgs := pgs+10
-                 ]
-# ********
-# run this fuckery by Bruno
+# sibs <- sibs[, pgs := pgs*10000 # scalling by 100 and adding 10 for subtractions
+#                  ][
+#                    , pgs := pgs+10
+#                  ]
+# # ********
 
 # the beta for between families mean
 pgs_b <- sibs[, .(pgs_b = mean(pgs)), by = "rel_family_id"]
@@ -152,30 +149,57 @@ sibs <- pgs_b[sibs, on = "rel_family_id"][
   ][
     , (scale_cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=scale_cols # standardizing all the relevant info
   ]
+
+
+
 # ********
 ### check the code above the last two subs have identical pgs_d scaled vals!!!
 
-sibs <- umx::umx_residualize(c(dvs, "ses", "pgs_w", "pgs_b"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"),
-                             data = sibs)
+# sibs <- umx::umx_residualize(c(dvs, "ses", "pgs_w", "pgs_b"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"),
+#                              data = sibs)
 
-sibs <- sibs[, .(nihtbx_cryst_agecorrected, nihtbx_fluidcomp_agecorrected, nihtbx_list_agecorrected,
-         pgs_w, pgs_b, ses, rel_family_id)]
+sibs <- sibs[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
+         pgs_w, pgs_b, ses, rel_family_id,
+         C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C15, C16, C17, C18, C19, C20)]
 
 
-cy_mod <- lmerTest::lmer(nihtbx_cryst_agecorrected ~ pgs_w + pgs_b + (1|rel_family_id), data = sibs)
-cy_mod_ses <- lmerTest::lmer(nihtbx_cryst_agecorrected ~ pgs_w + pgs_b + ses + (1|rel_family_id), data = sibs)
-summary(cy_mod); print("DV AGE CORRECTED"); print("DV AGE CORRECTED"); print("DV AGE CORRECTED")
-summary(cy_mod_ses); print("DV AGE CORRECTED"); print("DV AGE CORRECTED"); print("DV AGE CORRECTED")
 
-fi_mod <- lmerTest::lmer(nihtbx_fluidcomp_agecorrected ~ pgs_w + pgs_b + (1|rel_family_id), data = sibs)
-fi_mod_ses <- lmerTest::lmer(nihtbx_fluidcomp_agecorrected ~ pgs_w + pgs_b + ses + (1|rel_family_id), data = sibs)
-summary(fi_mod); print("DV AGE CORRECTED")
-summary(fi_mod_ses); print("DV AGE CORRECTED")
+# put them in as covariates
 
-list_mod <- lmerTest::lmer(nihtbx_list_agecorrected ~ pgs_w + pgs_b + (1|rel_family_id), data = sibs)
-list_mod_ses <- lmerTest::lmer(nihtbx_list_agecorrected ~ pgs_w + pgs_b + ses + (1|rel_family_id), data = sibs)
-summary(list_mod); print("DV AGE CORRECTED")
-summary(list_mod_ses); print("DV AGE CORRECTED")
+cy_mod <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ pgs_w + pgs_b +
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + 
+                           C11 + C12 + C13 + C14 + C15 + C15 + C16 + C17 + C18 + C19 + C20 + (1|rel_family_id), data = sibs)
+cy_mod_ses <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ pgs_w + pgs_b + ses +
+                               C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + 
+                               C11 + C12 + C13 + C14 + C15 + C15 + C16 + C17 + C18 + C19 + C20 + (1|rel_family_id), data = sibs)
+summary(cy_mod); summary(cy_mod_ses); 
+
+fi_mod <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ pgs_w + pgs_b +
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + 
+                           C11 + C12 + C13 + C14 + C15 + C15 + C16 + C17 + C18 + C19 + C20 + (1|rel_family_id), data = sibs)
+fi_mod_ses <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ pgs_w + pgs_b + ses +
+                               C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + 
+                               C11 + C12 + C13 + C14 + C15 + C15 + C16 + C17 + C18 + C19 + C20 + (1|rel_family_id), data = sibs)
+
+summary(fi_mod); summary(fi_mod_ses)
+# Because there is the between SES is non-sig in line with Selzem
+# they are overlaping in their effect on Fluid
+# check how they reached their conclusion
+# they did something else because it's a mixed effects model
+# is there something else I need to put in...?
+# SES is already correcting for this to some extent
+# a lot of genetic indirect effects on cognition is because of SES (write to reviewer)
+
+
+
+
+list_mod <- lmerTest::lmer(nihtbx_list_uncorrected ~ pgs_w + pgs_b +
+                             C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + 
+                             C11 + C12 + C13 + C14 + C15 + C15 + C16 + C17 + C18 + C19 + C20 + (1|rel_family_id), data = sibs)
+list_mod_ses <- lmerTest::lmer(nihtbx_list_uncorrected ~ pgs_w + pgs_b + ses +
+                                 C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + 
+                                 C11 + C12 + C13 + C14 + C15 + C15 + C16 + C17 + C18 + C19 + C20 + (1|rel_family_id), data = sibs)
+summary(list_mod); summary(list_mod_ses)
 
 
 
