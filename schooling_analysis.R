@@ -7,6 +7,32 @@
 ##################################################################
 ########### Main schooling analysis script: Notes ########### 
 
+
+
+# make an SI table with psych::describe() add VIFs?
+
+# maybe distribution plots in SI?
+
+# read the paper Rev2 gave and look into sibling analysis
+
+# could do Raw cor with Cy, Fi, list with PGS & than show the amount of genetic nurture?
+
+# need to figure out how to do it...
+
+# There are reasons to expect the correlation of PGS with IQ to be over estimated due to indirect genetic effects.
+# While previous studies have found these indirect genetic effects to be mediated via SES? (check this)
+# We used XXX siblings to estimate genetic nuture ***, we found the effect to decrease *, *, *.
+# Yet sibling analysis **** limitations. 
+
+
+
+
+
+
+
+
+
+
 # NDA 3.0 Release Notes ABCD README FIRST
 # this document has all the relevant info
 
@@ -202,10 +228,6 @@ cog <- fread("sed -e '2d' data/abcd_yksad01.txt")[
 cog <- fread("data/abcd_pgs.txt")[cog, on = "subjectkey"]
 cog <- fread('data/pca_data_ethnicity_PC20.txt', fill = T)[,1:22][cog, on = "subjectkey"] #[name == "White"]
 
-
-
-
-
 cog.complete <- cog[kbi_y_grade_repeat ==0] # 9% of subjects gone
 
 
@@ -354,16 +376,22 @@ cog.complete <- cog.complete[!is.na(cog.complete$ses),]
 
 # crystalized IQ
 
-# 
-# cryst_data_pca.complete <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), 
-#                                                 data = cryst_data_pca.complete)
-
 cy_1 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
                        data = cog.complete, REML = F)
 
 cy_2 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                        data = cog.complete, REML = F) 
+
+# https://en.wikipedia.org/wiki/Frisch%E2%80%93Waugh%E2%80%93Lovell_theorem
+# hold <- cog.complete
+# hold <- umx::umx_residualize(c("nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs"), c("C1" ,"C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20"), 
+#                                                                                                  data = hold)
+#                                               
+# cy_2_hold <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + (1 | site_id_l),
+#                             data = hold, REML = F) 
+
+
 
 # adding the two way interactions of interest schoolingXpgs, schoolingXses & pgsXses
 cy_3 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
@@ -488,10 +516,11 @@ cy_3_bayes_rope.02 <- rope(cy_3_bayes, range =  c(-0.02, 0.02))
 cy_3_bayes %>%
   gather_draws(`b_schooling_yrs:ses`, `b_schooling_yrs:pgs`, `b_pgs:ses`) %>%
   ggplot(aes(y = .variable, x = .value)) +
-  geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),colour="red",alpha=0.05) +
-  geom_rect(aes(xmin=-.05,xmax=.05,ymin=-Inf,ymax=Inf),colour="red",alpha=0.1) +
-  geom_rect(aes(xmin=-.08,xmax=.08,ymin=-Inf,ymax=Inf),colour="red",alpha=0.15) +
-  stat_halfeye() +
+  geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),fill="red", color = NA,alpha=0.05) + # weird fill actually make the color change... 
+  # geom_rect(aes(xmin=-.05,xmax=.05,ymin=-Inf,ymax=Inf),fill="red",alpha=0.1) +
+  # geom_rect(aes(xmin=-.08,xmax=.08,ymin=-Inf,ymax=Inf),fill="red",alpha=0.15) +
+  # stat_halfeye(color = "lightblue") +
+  stat_slab(fill = "blue", alpha = .5) +
   geom_vline(xintercept = c(-.08, .08), linetype = "dashed") +
   geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
   geom_vline(xintercept = c(-.02, .02), linetype = "dashed") +
@@ -599,6 +628,99 @@ bayestestR::rope(fi_3_bayes, range =  c(-0.02, 0.02))
 
 
 # end goal make a plot for the 3 interaction terms of interest, with 3 bars of effect size .1, .05 & .02.
+
+
+
+
+
+
+
+
+
+
+##################################
+### Instrument variable rohbustness checks
+
+# see how older they are in comparison
+hold <- cog
+
+table(cog$kbi_y_grade_repeat)
+
+# data tidy, making one complete dataset
+dvs <- c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected")
+common_cols <- c(dvs, "pgs", "schooling_yrs", "age_yrs",
+                 "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
+# subseting the main df
+cog <- cog[cog[, complete.cases(.SD), .SDcols = common_cols]][
+  , (dvs) := lapply(.SD, vec_to_fence), .SDcols=dvs # bringing the dvs to the fence
+][
+  , c("schooling_yrs.unscaled", "age_yrs.unscaled") := .(schooling_yrs, age_yrs) # making new holding cols that are unscaled for age & school
+][
+  , (common_cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=common_cols # standardizing all the relevant info
+]
+
+
+# rescaling the SES components for the ppca
+cols_ses <- c("ParEd_max", "demo_comb_income_v2", "reshist_addr1_adi_wsum")
+cog[, (cols_ses) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_ses]
+
+cog$reshist_addr1_adi_wsum <- -cog$reshist_addr1_adi_wsum # neighborhood deprivation is now called neighborhood quality
+# making a PCA for SES
+# cog$ses_pca <- psych::pca(cog[, .(ParEd_max, demo_comb_income_v2, reshist_addr1_adi_wsum)])$scores
+# https://stats.stackexchange.com/questions/35561/imputation-of-missing-values-for-pca
+
+# gonna do probabilitics PCA to get the SES PCA scores and than MICE for the other values
+# mice::md.pattern(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)], plot = F)
+cog$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog[, .(ParEd_max, demo_comb_income_v2, reshist_addr1_adi_wsum)]), nPcs = 1, seed = 42)@loadings)
+# ppca has a .999 correlation for the non-missing values with normal pca
+
+# I am now finding subject that were missing more than 1 value for the 3 SES categories
+cog$twoormore <- rep(0, length(cog$subjectkey))
+cog$twoormore[is.na(cog$ParEd_max)] <- cog$twoormore[is.na(cog$ParEd_max)] +1
+cog$twoormore[is.na(cog$demo_comb_income_v2)] <- cog$twoormore[is.na(cog$demo_comb_income_v2)] +1 
+cog$twoormore[is.na(cog$reshist_addr1_adi_wsum)] <- cog$twoormore[is.na(cog$reshist_addr1_adi_wsum)] +1 
+cog$twoormore[cog$twoormore==1] <- 0
+cog$twoormore[cog$twoormore>1] <- 1
+
+# sum(cog$twoormore) 
+cog$ses[cog$twoormore==1] <- NA # making them NA
+
+cog$ses <- as.numeric(scale(cog$ses))
+# dim(cog)[1] - dim(cog[!is.na(cog$ses),])[1] # n = 34
+cog <- cog[!is.na(cog$ses),]
+
+table(cog$kbi_y_grade_repeat)
+cog$logi_repeat <- cog$kbi_y_grade_repeat == 1
+
+summary(lm(age_yrs.unscaled ~ logi_repeat + schooling_yrs.unscaled, data = cog))
+
+cy_1_reps <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
+                       data = cog, REML = F)
+fi_1_reps <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
+                       data = cog, REML = F)
+list_1_reps <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
+                       data = cog, REML = F)
+
+cy_1; cy_1_reps
+fi_1; fi_1_reps
+list_1; list_1_reps
+
+table(cog.complete$demo_ed_v2)
+cog.complete[demo_ed_v2 == 5, fifth_grade := TRUE][demo_ed_v2 == 4, fifth_grade := FALSE]
+
+cy_1_g <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + demo_ed_v2 + (1 | site_id_l),
+                            data = cog.complete, REML = F)
+fi_1_g <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + demo_ed_v2 + (1 | site_id_l),
+                            data = cog.complete, REML = F)
+list_1_g <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + demo_ed_v2 + (1 | site_id_l),
+                              data = cog.complete, REML = F)
+
+cy_1_5v4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + fifth_grade + (1 | site_id_l),
+                         data = cog.complete, REML = F)
+fi_1_5v4 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + fifth_grade + (1 | site_id_l),
+                         data = cog.complete, REML = F)
+list_1_5v4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + fifth_grade + (1 | site_id_l),
+                           data = cog.complete, REML = F)
 
 
 ##################################
