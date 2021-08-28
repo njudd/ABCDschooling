@@ -249,40 +249,20 @@ cog.complete <- cog[kbi_y_grade_repeat ==0] # 9% of subjects gone
 # list_imp <- imp_3way(list_data_pca[, c("site_id_l", "nihtbx_list_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex")])
 
 
-#MAR assumption, showing that those without PGS's happen to be a different population
-cog.complete$missing_PGS <- is.na(cog.complete$pgs)
-
-# scaling the SES components for 
-cols_ses <- c("ParEd_max", "demo_comb_income_v2", "reshist_addr1_adi_wsum")
-cog.complete[, (cols_ses) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_ses]
-
-
-effectsize::cohens_d(demo_comb_income_v2 ~ missing_PGS, data = cog.complete)
-summary(lm(demo_comb_income_v2 ~ missing_PGS, data = cog.complete))
-
-effectsize::cohens_d(ParEd_max ~ missing_PGS, data = cog.complete)
-summary(lm(ParEd_max ~ missing_PGS, data = cog.complete))
-
-effectsize::cohens_d(reshist_addr1_adi_wsum ~ missing_PGS, data = cog.complete)
-summary(lm(reshist_addr1_adi_wsum ~ missing_PGS, data = cog.complete))
-
-# I don't think that this MAR missingness will substantially change the data, because I think its site DNA only missingness
-# sites are not SES representative. Also I did the whole imputation accidently without genetic PCs and the main effect results
-# where almost the exact same...
-
 # data tidy, making one complete dataset
 dvs <- c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected")
-common_cols <- c(dvs, "pgs", "schooling_yrs", "age_yrs",
+dvs_plus <- c(dvs, "schooling_yrs", "age_yrs")
+all_cols <- c(dvs_plus, "pgs",
                  "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
 # subseting the main df
-cog.complete <- cog.complete[cog.complete[, complete.cases(.SD), .SDcols = common_cols]][
+
+cog.complete <- cog.complete[cog.complete[, complete.cases(.SD), .SDcols = dvs_plus]][
   , (dvs) := lapply(.SD, vec_to_fence), .SDcols=dvs # bringing the dvs to the fence
 ][
   , c("schooling_yrs.unscaled", "age_yrs.unscaled") := .(schooling_yrs, age_yrs) # making new holding cols that are unscaled for age & school
   ][
-    , (common_cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=common_cols # standardizing all the relevant info
-]
-
+    , (all_cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=all_cols # standardizing all the relevant info
+][]
 
 # rescaling the SES components for the ppca
 cols_ses <- c("ParEd_max", "demo_comb_income_v2", "reshist_addr1_adi_wsum")
@@ -310,9 +290,33 @@ cog.complete$twoormore[cog.complete$twoormore>1] <- 1
 cog.complete$ses[cog.complete$twoormore==1] <- NA # making them NA
 
 cog.complete$ses <- as.numeric(scale(cog.complete$ses))
-# dim(cog.complete)[1] - dim(cog.complete[!is.na(cog.complete$ses),])[1] # n = 34
+# dim(cog.complete)[1] - dim(cog.complete[!is.na(cog.complete$ses),])[1] # n = 45
 cog.complete <- cog.complete[!is.na(cog.complete$ses),]
 
+# this SES is done with the DNA missing people!!!
+cog.complete$SES_all <- cog.complete$ses
+cog.complete$ses <- rep(NA, length(cog.complete$ses))
+
+# so to figure out exactly how many are excluded due to dna I need here to find a group of all subs had DNA not been excluded ONLY
+# but I also need to do the ppca on only the included subjects... (yet redo it to show the bias...)
+
+#MAR assumption, showing that those without PGS's happen to be a different population
+cog.complete$missing_PGS <- is.na(cog.complete$pgs)
+sum(cog.complete$missing_PGS)
+summary(lm(SES_all ~ missing_PGS, data = cog.complete))
+
+# I don't think that this MAR missingness will substantially change the data, because I think its site DNA only missingness
+# sites are not SES representative. Also I did the whole imputation accidently without genetic PCs and the main effect results
+# where almost the exact same...
+
+
+cog.complete <- cog.complete[cog.complete[, complete.cases(.SD), .SDcols = all_cols]]
+
+# now making the actually SES ppca on the listwise deleted sample, I had to do this to report the sample is higher SES
+cols_ses <- c("ParEd_max", "demo_comb_income_v2", "reshist_addr1_adi_wsum")
+cog.complete[, (cols_ses) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_ses]
+cog.complete$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog.complete[, .(ParEd_max, demo_comb_income_v2, reshist_addr1_adi_wsum)]), nPcs = 1, seed = 42)@loadings)
+cog.complete$ses <- as.numeric(scale(cog.complete$ses))
 
 ##################################################################
 ########### plotting descript (not essential to run) ###########  ###### 
@@ -359,6 +363,104 @@ cog.complete <- cog.complete[!is.na(cog.complete$ses),]
 
 # Bruno has done this with PCA and showed the expected results (altho it still predicts pretty well)
 
+
+
+
+#########################  #########################
+# making corelation plots
+#########################  #########################
+# http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
+
+if('corplt' == 'off'){
+  # functions
+  # Get lower triangle of the correlation matrix
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+  # Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+  
+  # making a corplot
+  checking_p <- Hmisc::rcorr(as.matrix(cog.complete[, .(schooling_yrs, age_yrs, pgs, ses,
+                                                        nihtbx_list_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected)]))
+  cormat <- round(cor(cog.complete[, .(schooling_yrs, age_yrs, pgs, ses,
+                                       nihtbx_list_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected)], use = "pairwise.complete.obs"),2) # for upper
+  
+  # renaming vars
+  rownames(cormat) <- c("Schooling", "Age", "cogPGS", "SES", "WM", "fIQ", "cIQ")
+  colnames(cormat) <- c("Schooling", "Age", "cogPGS", "SES", "WM", "fIQ", "cIQ")
+
+  
+  cormat_metled <- data.table::melt(cormat)
+  
+  upper_tri <- get_upper_tri(cormat)
+  melted_cormat <- melt(upper_tri, na.rm = TRUE)
+  
+  melted_cormat_ns <- melted_cormat
+  # showing values with p < .001
+  melted_cormat_ns[4,3] <- NA 
+  melted_cormat_ns[5,3] <- NA
+  melted_cormat_ns[7,3] <- NA 
+  melted_cormat_ns[8,3] <- NA 
+  
+  p1 <- ggplot(data = melted_cormat_ns, aes(Var2, Var1, fill = value))+
+    geom_tile(color = "white")+ 
+    viridis::scale_fill_viridis(option="rocket",direction=-1,limits=c(0,1), na.value="lightgrey", begin = .2,
+                                name = "Pearson's \nCorrelation") + coord_fixed() +
+    #scale_color_brewer(name="Pearson\nCorrelation", direction = -1, limit = c(0,1)) +
+    #scale_fill_continuous(name="Pearson\nCorrelation", limit = c(0,1), low = "yellow", high = "red",  na.value = "white") +
+    #scale_fill_viridis(name="Pearson\nCorrelation", limit = c(.25,.86), na.value = "white", option = "D", direction= 1) +
+    theme(axis.text.x = element_text(angle = 65, vjust = 1,
+                                     size = 25, hjust = 1),
+          axis.text.y = element_text(size = 25))
+
+  
+  # scale_fill_viridis_c(limits=c(0,1),option="plasma")
+  
+  p1 <- p1 +
+   geom_text(data = melted_cormat, aes(Var2, Var1, label = sprintf("%0.2f", value)), color = "black", size = 10) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      # axis.text.y = element_blank(), # removing y axis text
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.title = element_text(size = 25),
+      legend.text = element_text(size = 20),
+      legend.key.size = unit(1.7, "cm"))
+  
+  png("~/Projects/R_projects/ABCDschooling/figs/corplt.png", 1000, 900)
+  p1
+  dev.off()
+  
+  
+  
+  
+  
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # apa table
 # apaTables::apa.cor.table(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
 #                                  pgs, ses,
@@ -366,6 +468,19 @@ cog.complete <- cog.complete[!is.na(cog.complete$ses),]
 #                          show.conf.interval = FALSE,
 #                          filename = "~/Projects/R_projects/gxe_ABCD/cortable.doc"
 #                          )
+
+
+##########################
+### descriptives
+
+library(kableExtra)
+
+report::report_table(cog.complete)
+
+dt %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+
 
 ##################################################################
 ########### Analysis: fitting models ########### 
@@ -843,7 +958,7 @@ kableExtra::kable_styling(kableExtra::kable(cy_IMPresults))
 ########### Main manuscript plotting ########### 
 # figure 1; making a plot of the main effects
 eff_plt <- data.table(DV = c(rep("fIQ", 4), rep("cIQ", 4), rep("WM", 4)),
-                      var = c(rep(c("Age 1yr", "School 1yr", "cog-PGS", "SES"), 3)),
+                      var = c(rep(c("Age 1yr", "School 1yr", "cogPGS", "SES"), 3)),
            beta = c(
              as.numeric(summary(fi_mm2.2)$coefficients[,1][c(2,3,5,6)]), # grabing the beta terms for age, schooling, pgs & ses (in the same order as the var I made)
              as.numeric(summary(cy_mm2.2)$coefficients[,1][c(2,3,5,6)]), 
@@ -858,7 +973,7 @@ eff_plt <- data.table(DV = c(rep("fIQ", 4), rep("cIQ", 4), rep("WM", 4)),
 
 barCOLS <- c('#DE3163', '#6495ED', '#9FE2BF') # a vector of colors
 
-eff_plt$var <- factor(eff_plt$var, levels = c("Age 1yr", "School 1yr", "cog-PGS", "SES")) # making var a factor for ggplot, ordering them as I wish as well
+eff_plt$var <- factor(eff_plt$var, levels = c("Age 1yr", "School 1yr", "cogPGS", "SES")) # making var a factor for ggplot, ordering them as I wish as well
 eff_plt$DV <- factor(eff_plt$DV) # making the DV as a factor
 
 main_eff_Dplt <- ggplot(eff_plt, aes(var, beta, ymin = ci_low, ymax = ci_high, col = DV, fill = DV)) +
@@ -889,7 +1004,7 @@ cy_plt <- plot(mydf_cy) +
   scale_color_manual(values=c("#64CEED", "#6495ED", "#8164ED")) +
   scale_fill_manual(values=c("#64CEED", "#6495ED", "#8164ED")) +
   theme_minimal(base_size = 25) +
-  labs(title = "", x = "cog-PGS (SD)", y = "cIQ")+
+  labs(title = "", x = "cogPGS (SD)", y = "cIQ")+
   guides(color = guide_legend(reverse = T, "SES (SD)", override.aes=list(shape=15, size = 5, fill=NA))) +
   theme(legend.position= "none") +
   ggExtra::removeGridX()
@@ -898,7 +1013,7 @@ fi_plt <- plot(mydf_fi) +
   scale_color_manual(values=c("#64CEED", "#6495ED", "#8164ED"), name = "SES (SD)") +
   scale_fill_manual(values = c("#64CEED", "#6495ED", "#8164ED")) + # c('gray', 'gray', 'gray')
   theme_minimal(base_size = 25) +
-  labs(title = "", x = "cog-PGS (SD)", y = "fIQ") +
+  labs(title = "", x = "cogPGS (SD)", y = "fIQ") +
   guides(color = guide_legend(reverse = T, "SES (SD)", override.aes=list(shape=15, size = 5, fill=NA))) +
   ggExtra::removeGridX() 
 
