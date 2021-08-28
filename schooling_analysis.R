@@ -316,7 +316,10 @@ cog.complete <- cog.complete[cog.complete[, complete.cases(.SD), .SDcols = all_c
 cols_ses <- c("ParEd_max", "demo_comb_income_v2", "reshist_addr1_adi_wsum")
 cog.complete[, (cols_ses) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols_ses]
 cog.complete$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog.complete[, .(ParEd_max, demo_comb_income_v2, reshist_addr1_adi_wsum)]), nPcs = 1, seed = 42)@loadings)
-cog.complete$ses <- as.numeric(scale(cog.complete$ses))
+
+# rescalling them all
+
+cog.complete <- cog.complete[, (c(all_cols, "ses")) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=c(all_cols, "ses")]
 
 ##################################################################
 ########### plotting descript (not essential to run) ###########  ###### 
@@ -362,9 +365,6 @@ cog.complete$ses <- as.numeric(scale(cog.complete$ses))
 # summary(lm(scale(nihtbx_cryst_uncorrected) ~ scale(pgs), data = cog.complete[demo_race_a_p___10==0]))
 
 # Bruno has done this with PCA and showed the expected results (altho it still predicts pretty well)
-
-
-
 
 #########################  #########################
 # making corelation plots
@@ -439,27 +439,7 @@ if('corplt' == 'off'){
   p1
   dev.off()
   
-  
-  
-  
-  
-  
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # apa table
 # apaTables::apa.cor.table(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
@@ -475,12 +455,13 @@ if('corplt' == 'off'){
 
 library(kableExtra)
 
-report::report_table(cog.complete)
 
-dt %>%
-  kbl() %>%
-  kable_classic_2(full_width = F)
-
+# psych::describe(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
+#                                  age_yrs, age_yrs.unscaled, schooling_yrs, schooling_yrs.unscaled,
+#                                  ses, pgs,
+#                                  demo_comb_income_v2, ParEd_max, reshist_addr1_adi_wsum)]) %>%
+#   kbl(digits = 2) %>%
+#   save_kable("~/Projects/R_projects/ABCDschooling/tables/descrip.html")
 
 ##################################################################
 ########### Analysis: fitting models ########### 
@@ -838,22 +819,6 @@ list_1_5v4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + fifth_grade + (
                            data = cog.complete, REML = F)
 
 
-##################################
-# descriptives
-c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected")
-common_cols <- c(dvs, "pgs", "schooling_yrs", "age_yrs",
-                 "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
-
-
-psych::describe(cog[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
-                        pgs, ses, schooling_yrs, age_yrs,
-                        schooling_yrs.unscaled, age_yrs.unscaled,
-                        C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C19, C20)])
-
-
-
-
-
 ##################################################################
 ########### SI tables & results ########### 
 # Results
@@ -871,20 +836,32 @@ psych::describe(cog[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, 
 # plot_model(cy_mm2, type = "est") + ylim(0, .5) + theme_minimal()
 # plot_model(list_mm2, type = "est") + ylim(0, .5) + theme_minimal()
 
+performance::check_collinearity(cy_4) %>% 
+  kbl(digits = 2) %>% 
+  save_kable("~/Projects/R_projects/ABCDschooling/tables/vif_cy.html")
+  
+  
+  # psych::describe(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
+  #                                  age_yrs, age_yrs.unscaled, schooling_yrs, schooling_yrs.unscaled,
+  #                                  ses, pgs,
+  #                                  demo_comb_income_v2, ParEd_max, reshist_addr1_adi_wsum)]) %>%
+  #   kbl(digits = 2) %>%
+  #   save_kable("~/Projects/R_projects/ABCDschooling/tables/descrip.html")
+  
+
 # Cryst
-# sjPlot::tab_model(cy_mm2.2, cy_mm4_no3way, cy_mm4,
+# sjPlot::tab_model(cy_1, cy_2, cy_3, cy_4,
 #                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
-#                   file = "~/Projects/R_projects/ABCDschooling/tabs/cryst_results.html")
-# 
-# sjPlot::tab_model(fi_mm2.2, fi_mm4_no3way, fi_mm4,
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/cryst_results.html")
+# sjPlot::tab_model(fi_1, fi_2, fi_3, fi_4,
 #                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
-#                   file = "~/Projects/R_projects/ABCDschooling/tabs/fluid_results.html")
-# sjPlot::tab_model(list_mm2.2, list_mm4_no3way, list_mm4,
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/fluid_results.html")
+# sjPlot::tab_model(list_1, list_2, list_3, list_4,
 #                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
-#                   file = "~/Projects/R_projects/ABCDschooling/tabs/wm_results.html")
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/wm_results.html")
 
 # base model tables
 # sjPlot::tab_model(cy_mm2.2, fi_mm2.2, list_mm2.2,
