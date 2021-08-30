@@ -1019,15 +1019,15 @@ kableExtra::kable_styling(kableExtra::kable(cy_IMPresults))
 eff_plt <- data.table(DV = c(rep("fIQ", 4), rep("cIQ", 4), rep("WM", 4)),
                       var = c(rep(c("Age 1yr", "School 1yr", "cogPGS", "SES"), 3)),
            beta = c(
-             as.numeric(summary(fi_mm2.2)$coefficients[,1][c(2,3,5,6)]), # grabing the beta terms for age, schooling, pgs & ses (in the same order as the var I made)
-             as.numeric(summary(cy_mm2.2)$coefficients[,1][c(2,3,5,6)]), 
-             as.numeric(summary(list_mm2.2)$coefficients[,1][c(2,3,5,6)]) # gender is last in the model so it works
+             as.numeric(summary(fi_2_unscaled)$coefficients[,1][c(2,3,5,6)]), # grabing the beta terms for age, schooling, pgs & ses (in the same order as the var I made)
+             as.numeric(summary(cy_2_unscaled)$coefficients[,1][c(2,3,5,6)]), 
+             as.numeric(summary(list_2_unscaled)$coefficients[,1][c(2,3,5,6)]) # gender is last in the model so it works
            ), 
            ci_low = c( # getting the lower confidence intervals for the 4 terms for each 3 models
-             as.numeric(confint(fi_mm2.2)[c(4,5,7,8), 1]),as.numeric(confint(cy_mm2.2)[c(4,5,7,8), 1]), as.numeric(confint(list_mm2.2)[c(4,5,7,8), 1])
+             as.numeric(confint(fi_2_unscaled)[c(4,5,7,8), 1]),as.numeric(confint(cy_2_unscaled)[c(4,5,7,8), 1]), as.numeric(confint(list_2_unscaled)[c(4,5,7,8), 1])
            ), 
            ci_high= c( # getting the higher confidence intervals for the 4 terms for each 3 models
-             as.numeric(confint(fi_mm2.2)[c(4,5,7,8), 2]),as.numeric(confint(cy_mm2.2)[c(4,5,7,8), 2]), as.numeric(confint(list_mm2.2)[c(4,5,7,8), 2])
+             as.numeric(confint(fi_2_unscaled)[c(4,5,7,8), 2]),as.numeric(confint(cy_2_unscaled)[c(4,5,7,8), 2]), as.numeric(confint(list_2_unscaled)[c(4,5,7,8), 2])
            ))
 
 barCOLS <- c('#DE3163', '#6495ED', '#9FE2BF') # a vector of colors
@@ -1042,10 +1042,11 @@ main_eff_Dplt <- ggplot(eff_plt, aes(var, beta, ymin = ci_low, ymax = ci_high, c
   scale_fill_manual(values=barCOLS) +
   scale_color_manual(values=barCOLS) +
   scale_x_discrete(name="") + # , breaks = NULL
-  scale_y_continuous(name="Effect in SD", limits = c(0, .4)) +
+  scale_y_continuous(name="Effect in SD", limits = c(-.05, .4), breaks = c(0, .1, .2, .3, .4)) +
   theme_minimal(base_size = 20) +
   labs(color = " ", fill = " ") +
-  ggExtra::removeGridX()
+  ggExtra::removeGridX() +
+  coord_cartesian(expand = FALSE)
 
 ggsave("figs/main_eff_Dplt.png", main_eff_Dplt, width = 10, height = 4)
 
