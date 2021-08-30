@@ -98,8 +98,8 @@
 ########### Start of script: loading & cleaning data ########### 
 
 setwd("~/Projects/R_projects/ABCDschooling/")
-library(data.table); library(ggplot2); library(patchwork); library(effectsize); library(lubridate); 
-library(patchwork); library(lme4); library(sjPlot); library(performance); library(mice); library(broom.mixed) # need for pool in mice
+library(data.table); library(ggplot2); library(effectsize); library(lubridate); 
+library(lme4); library(sjPlot); library(performance); library(mice); library(broom.mixed) # need for pool in mice
 source('funcs/vec_to_fence.R')
 source('funcs/imp_3way.R')
 
@@ -608,18 +608,20 @@ library(tidybayes); library(tidyverse)
 # https://easystats.github.io/bayestestR/articles/credible_interval.html claims you need to update the number of draws
 
 
-cy_3_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
-                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                       data = cog.complete) 
+# cy_3_bayes <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+#                          pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+#                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+#                        data = cog.complete) 
 
 # prior = prior(student_t(1, -0.01, 0.001), coef = year)
 
 # schooling & age (for cryst)
-# curve(dnorm(x, 0.2, .15), from = -1, to = 1, #fluid/wm .15
+# curve(dnorm(x, .15, .1), from = -1, to =1, #fluid/wm .15
 #       main = "Relative Plausibility a priori for the model mean",
 #       xlab = "mean",
 #       ylab = "Probability of mean")
+
+
 
 cy_prior <- 
   prior(normal(.2,15), coef = age_yrs) + 
@@ -641,22 +643,22 @@ cy_3_bayes_pri <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex +
 
 # prior_summary(cy_3_bayes_pri)
 
-cy_3_bayes_rope.08 <- rope(cy_3_bayes, range =  c(-0.08, 0.08))
-cy_3_bayes_rope.05 <- rope(cy_3_bayes, range =  c(-0.05, 0.05))
-cy_3_bayes_rope.02 <- rope(cy_3_bayes, range =  c(-0.02, 0.02))
+# cy_3_bayes_rope.08 <- rope(cy_3_bayes, range =  c(-0.08, 0.08))
+# cy_3_bayes_rope.05 <- rope(cy_3_bayes, range =  c(-0.05, 0.05))
+# cy_3_bayes_rope.02 <- rope(cy_3_bayes, range =  c(-0.02, 0.02))
 
 cy_3_bayes_rope.08_pri <- rope(cy_3_bayes_pri, range =  c(-0.08, 0.08))
 cy_3_bayes_rope.05_pri <- rope(cy_3_bayes_pri, range =  c(-0.05, 0.05))
 cy_3_bayes_rope.02_pri <- rope(cy_3_bayes_pri, range =  c(-0.02, 0.02))
 
 # making a table of the ROPE estimates
-cy_rope <- as.data.table(cy_3_bayes_rope.08)[27:29,c(1,2,5)][
-  as.data.table(cy_3_bayes_rope.08_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-    as.data.table(cy_3_bayes_rope.05)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-      as.data.table(cy_3_bayes_rope.05_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-        as.data.table(cy_3_bayes_rope.02)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-          as.data.table(cy_3_bayes_rope.02_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")]
-colnames(cy_rope)[3:8] <- c("ROPE .08","ROPE .08 priors", "ROPE .05","ROPE .05 priors", "ROPE .02", "ROPE .02 priors")
+# cy_rope <- as.data.table(cy_3_bayes_rope.08)[27:29,c(1,2,5)][
+#   as.data.table(cy_3_bayes_rope.08_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#     as.data.table(cy_3_bayes_rope.05)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#       as.data.table(cy_3_bayes_rope.05_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#         as.data.table(cy_3_bayes_rope.02)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#           as.data.table(cy_3_bayes_rope.02_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")]
+# colnames(cy_rope)[3:8] <- c("ROPE .08","ROPE .08 priors", "ROPE .05","ROPE .05 priors", "ROPE .02", "ROPE .02 priors")
 
 fIQWM_prior <- 
   prior(normal(.15,15), coef = age_yrs) + 
@@ -670,10 +672,10 @@ fIQWM_prior <-
   prior(normal(0,.1), coef = schooling_yrs:pgs)
 
 
-fi_3_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                    pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
-                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                  data = cog.complete) 
+# fi_3_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+#                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+#                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+#                   data = cog.complete) 
 
 fi_3_bayes_pri <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
@@ -681,29 +683,29 @@ fi_3_bayes_pri <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + s
                   prior = fIQWM_prior,
                   data = cog.complete) 
 
-fi_3_bayes_rope.08 <- rope(fi_3_bayes, range =  c(-0.08, 0.08))
-fi_3_bayes_rope.05 <- rope(fi_3_bayes, range =  c(-0.05, 0.05))
-fi_3_bayes_rope.02 <- rope(fi_3_bayes, range =  c(-0.02, 0.02))
+# fi_3_bayes_rope.08 <- rope(fi_3_bayes, range =  c(-0.08, 0.08))
+# fi_3_bayes_rope.05 <- rope(fi_3_bayes, range =  c(-0.05, 0.05))
+# fi_3_bayes_rope.02 <- rope(fi_3_bayes, range =  c(-0.02, 0.02))
 
 fi_3_bayes_rope.08_pri <- rope(fi_3_bayes_pri, range =  c(-0.08, 0.08))
 fi_3_bayes_rope.05_pri <- rope(fi_3_bayes_pri, range =  c(-0.05, 0.05))
 fi_3_bayes_rope.02_pri <- rope(fi_3_bayes_pri, range =  c(-0.02, 0.02))
 
 # making a table of the ROPE estimates
-fi_rope <- as.data.table(fi_3_bayes_rope.08)[27:29,c(1,2,5)][
-  as.data.table(fi_3_bayes_rope.08_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-    as.data.table(fi_3_bayes_rope.05)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-      as.data.table(fi_3_bayes_rope.05_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-        as.data.table(fi_3_bayes_rope.02)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-          as.data.table(fi_3_bayes_rope.02_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")]
-colnames(fi_rope)[3:8] <- c("ROPE .08","ROPE .08 priors", "ROPE .05","ROPE .05 priors", "ROPE .02", "ROPE .02 priors")
+# fi_rope <- as.data.table(fi_3_bayes_rope.08)[27:29,c(1,2,5)][
+#   as.data.table(fi_3_bayes_rope.08_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#     as.data.table(fi_3_bayes_rope.05)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#       as.data.table(fi_3_bayes_rope.05_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#         as.data.table(fi_3_bayes_rope.02)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#           as.data.table(fi_3_bayes_rope.02_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")]
+# colnames(fi_rope)[3:8] <- c("ROPE .08","ROPE .08 priors", "ROPE .05","ROPE .05 priors", "ROPE .02", "ROPE .02 priors")
 
 
 
-list_3_bayes <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                      pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
-                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                    data = cog.complete) 
+# list_3_bayes <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+#                       pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+#                       C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+#                     data = cog.complete) 
 
 list_3_bayes_pri <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                       pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
@@ -711,22 +713,22 @@ list_3_bayes_pri <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex 
                     prior = fIQWM_prior,
                     data = cog.complete) 
 
-list_3_bayes_rope.08 <- rope(list_3_bayes, range =  c(-0.08, 0.08))
-list_3_bayes_rope.05 <- rope(list_3_bayes, range =  c(-0.05, 0.05))
-list_3_bayes_rope.02 <- rope(list_3_bayes, range =  c(-0.02, 0.02))
+# list_3_bayes_rope.08 <- rope(list_3_bayes, range =  c(-0.08, 0.08))
+# list_3_bayes_rope.05 <- rope(list_3_bayes, range =  c(-0.05, 0.05))
+# list_3_bayes_rope.02 <- rope(list_3_bayes, range =  c(-0.02, 0.02))
 
 list_3_bayes_rope.08_pri <- rope(list_3_bayes_pri, range =  c(-0.08, 0.08))
 list_3_bayes_rope.05_pri <- rope(list_3_bayes_pri, range =  c(-0.05, 0.05))
 list_3_bayes_rope.02_pri <- rope(list_3_bayes_pri, range =  c(-0.02, 0.02))
 
 # making a table of the ROPE estimates
-list_rope <- as.data.table(list_3_bayes_rope.08)[27:29,c(1,2,5)][
-  as.data.table(list_3_bayes_rope.08_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-    as.data.table(list_3_bayes_rope.05)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-      as.data.table(list_3_bayes_rope.05_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-        as.data.table(list_3_bayes_rope.02)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
-          as.data.table(list_3_bayes_rope.02_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")]
-colnames(list_rope)[3:8] <- c("ROPE .08","ROPE .08 priors", "ROPE .05","ROPE .05 priors", "ROPE .02", "ROPE .02 priors")
+# list_rope <- as.data.table(list_3_bayes_rope.08)[27:29,c(1,2,5)][
+#   as.data.table(list_3_bayes_rope.08_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#     as.data.table(list_3_bayes_rope.05)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#       as.data.table(list_3_bayes_rope.05_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#         as.data.table(list_3_bayes_rope.02)[27:29,c(1,2,5)], on = c("Parameter", "CI")][
+#           as.data.table(list_3_bayes_rope.02_pri)[27:29,c(1,2,5)], on = c("Parameter", "CI")]
+# colnames(list_rope)[3:8] <- c("ROPE .08","ROPE .08 priors", "ROPE .05","ROPE .05 priors", "ROPE .02", "ROPE .02 priors")
 
 
 # one table with the ROPES (.05, .02) from the model with priors 
@@ -743,134 +745,75 @@ ROPE_tab %>%
   kbl(digits = 2) %>% 
   kable_styling()
 
-
+# now plotting the null Hx
+# plot(cy_3_bayes_rope.05_pri, rope_color = "red") +
+#   scale_fill_brewer(palette = "Greens", direction = -1)
 
 # plot cIQ
 cy_Bayes_plt <- cy_3_bayes_pri %>%
   gather_draws(`b_schooling_yrs:pgs`, `b_schooling_yrs:ses`, `b_pgs:ses`) %>%
   ggplot(aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = c(0)) +
   geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),fill="gray", color = NA,alpha=0.05) + # weird fill actually make the color change... 
-  # geom_rect(aes(xmin=-.05,xmax=.05,ymin=-Inf,ymax=Inf),fill="red",alpha=0.1) +
-  # geom_rect(aes(xmin=-.08,xmax=.08,ymin=-Inf,ymax=Inf),fill="red",alpha=0.15) +
-  # stat_halfeye(color = "lightblue") +
-  stat_slab(fill = "blue", alpha = .5) +
+  stat_slab(aes(fill = stat(cut_cdf_qi(cdf, .width = .95,labels = scales::percent_format()))), alpha = .5) +
+  scale_fill_manual(values = "blue", na.value = "lightblue") + #, na.translate = FALSE
   geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
- # xlim(-.15, .15)+
-  labs(y = "", x = "cIQ Possible parameter values (s.d.)") +
+  labs(y = "", x = "cIQ posterior distribution (s.d.)") +
   scale_x_continuous(limits = c(-.1, .1), breaks = c(-.1, -.05, 0, .05, .1)) +
-  scale_y_discrete(labels = c("b_schooling_yrs:pgs" = "Schooling*cogPGS", "b_schooling_yrs:ses" = "Schooling*SES", "b_pgs:ses" = "cogPGS*SES")) +
-  theme_minimal()
-
+  scale_y_discrete(labels = c("b_schooling_yrs:pgs" = "", "b_schooling_yrs:ses" = "", "b_pgs:ses" = "")) +
+  theme_minimal(base_size = 15) +
+  theme(legend.position="none",
+        axis.title=element_text(face="bold"),
+        axis.text.x = element_text(),
+        axis.text.y = element_text(angle = 45))+
+  coord_cartesian(expand = FALSE)
 # plot fIQ
 fi_Bayes_plt <- fi_3_bayes_pri %>%
   gather_draws(`b_schooling_yrs:pgs`, `b_schooling_yrs:ses`, `b_pgs:ses`) %>%
   ggplot(aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = c(0)) +
   geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),fill="gray", color = NA,alpha=0.05) + # weird fill actually make the color change... 
-  stat_slab(fill = "blue", alpha = .5) +
+  stat_slab(aes(fill = stat(cut_cdf_qi(cdf, .width = .95,labels = scales::percent_format()))), alpha = .5) +
+  scale_fill_manual(values = c("blue"), na.value = "lightblue") +
   geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
-  labs(y = "", x = "fIQ Possible parameter values (s.d.)") +
+  labs(y = "", x = "fIQ posterior distribution (s.d.)") +
   scale_x_continuous(limits = c(-.1, .1), breaks = c(-.1, -.05, 0, .05, .1)) +
-  scale_y_discrete(labels = c("b_schooling_yrs:pgs" = "Schooling*cogPGS", "b_schooling_yrs:ses" = "Schooling*SES", "b_pgs:ses" = "cogPGS*SES")) +
-  theme_minimal()
-
+  scale_y_discrete(labels = c("b_schooling_yrs:pgs" = "", "b_schooling_yrs:ses" = "", "b_pgs:ses" = "")) +
+  theme_minimal(base_size = 15) +
+  theme(legend.position="none",
+        axis.title=element_text(face="bold"),
+        axis.text.x = element_text(),
+        axis.text.y = element_text(angle = 45))+
+  coord_cartesian(expand = FALSE)
 # plot WM
 list_Bayes_plt <- list_3_bayes_pri %>%
   gather_draws(`b_schooling_yrs:pgs`, `b_schooling_yrs:ses`, `b_pgs:ses`) %>%
   ggplot(aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = c(0)) +
   geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),fill="gray", color = NA,alpha=0.05) + # weird fill actually make the color change... 
-  stat_slab(fill = "blue", alpha = .5) +
+  stat_slab(aes(fill = stat(cut_cdf_qi(cdf, .width = .95,labels = scales::percent_format()))), alpha = .5) +
+  scale_fill_manual(values = c("blue"), na.value = "lightblue") +
   geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
-  labs(y = "", x = "WM Possible parameter values (s.d.)") +
+  labs(y = "", x = "WM posterior distribution (s.d.)") +
   scale_x_continuous(limits = c(-.1, .1), breaks = c(-.1, -.05, 0, .05, .1)) +
-  scale_y_discrete(labels = c("b_schooling_yrs:pgs" = "Schooling*cogPGS", "b_schooling_yrs:ses" = "Schooling*SES", "b_pgs:ses" = "cogPGS*SES")) +
-  theme_minimal(base_size = 10)
+  scale_y_discrete(labels = c("b_schooling_yrs:pgs" = "", "b_schooling_yrs:ses" = "", "b_pgs:ses" = "")) +
+  theme_minimal(base_size = 15) +
+  theme(legend.position="none",
+        axis.title=element_text(face="bold"),
+        axis.text.x = element_text(),
+        axis.text.y = element_text(angle = 45))+
+  coord_cartesian(expand = FALSE)
 
 
-# Change the appearance and the orientation angle
-# of axis tick labels
-# p + theme(axis.text.x = element_text(face="bold", color="#993333", 
-#                                      size=14, angle=45),
-#           axis.text.y = element_text(face="bold", color="#993333", 
-#                                      size=14, angle=45))
-# 
-
-
-library(patchwork)
-ROPE_plt <- cy_Bayes_plt + fi_Bayes_plt + list_Bayes_plt + plot_annotation(tag_levels = 'A')
+ROPE_plt <- cy_Bayes_plt + fi_Bayes_plt + list_Bayes_plt + plot_annotation(tag_levels = 'a')
+# ggsave("figs/ROPE_plt.png", ROPE_plt, width = 15.4, height = 9.65)
 
 
 
-plot(cy_3_bayes_rope.05_pri, rope_color = "red") +
-  scale_fill_brewer(palette = "Greens", direction = -1)
 
 
 # a first step to check the assumptions of this hypothesis testing is to look at different pair plots. 
 # An even more sophisticated check is the projection predictive variable selection (Piironen and Vehtari 2017).
-
-
-
-
-
-
-
-
-
-plot(cy_3_bayes_rope.08, rope_color = "red") +
-  scale_fill_brewer(palette = "Greens", direction = -1)
-
-plot(cy_3_bayes_rope.05, rope_color = "red") +
-  scale_fill_brewer(palette = "Greens", direction = -1)
-
-plot(cy_3_bayes_rope.02, rope_color = "red") +
-  scale_fill_brewer(palette = "Greens", direction = -1)
-
-fi_2_bayes <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
-                    C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                  data = cog.complete) 
-
-
-
-
-
-sum_rope <- rope(fi_3_bayes, range =  c(-0.08, 0.08), parameters = c("schooling_yrs", "ses", "pgs"))
-
-
-
-result <- rope(model, ci = c(0.9, 0.95))
-
-
-plot(fa_rope, rope_color = "red") +
-  scale_fill_brewer(palette = "Greens", direction = -1)
-
-
-
-
-
-bayestestR::rope(fi_3_bayes, range =  c(-0.08, 0.08))
-bayestestR::rope(fi_3_bayes, range =  c(-0.05, 0.05))
-bayestestR::rope(fi_3_bayes, range =  c(-0.02, 0.02))
-
-
-
-# compare this one with a sum score to a fluid EFA
-bayestestR::rope(fi_3_bayes, range =  c(-0.02, 0.02))
-
-
-
-
-
-
-
-
-# end goal make a plot for the 3 interaction terms of interest, with 3 bars of effect size .1, .05 & .02.
-
-
-
-
-
-
-
-
 
 
 ##################################
