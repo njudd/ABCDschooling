@@ -98,7 +98,7 @@
 ########### Start of script: loading & cleaning data ########### 
 
 setwd("~/Projects/R_projects/ABCDschooling/")
-library(data.table); library(ggplot2); library(effectsize); library(lubridate); 
+library(data.table); library(ggplot2); library(effectsize); library(lubridate); library(patchwork)
 library(lme4); library(sjPlot); library(performance); library(mice); library(broom.mixed) # need for pool in mice
 source('funcs/vec_to_fence.R')
 source('funcs/imp_3way.R')
@@ -286,7 +286,7 @@ cog.complete$twoormore[is.na(cog.complete$reshist_addr1_adi_wsum)] <- cog.comple
 cog.complete$twoormore[cog.complete$twoormore==1] <- 0
 cog.complete$twoormore[cog.complete$twoormore>1] <- 1
 
-# sum(cog.complete$twoormore) # 46 subjects, matches md pattern above
+# sum(cog.complete$twoormore) # 45 subjects, matches md pattern above
 cog.complete$ses[cog.complete$twoormore==1] <- NA # making them NA
 
 cog.complete$ses <- as.numeric(scale(cog.complete$ses))
@@ -407,9 +407,21 @@ if('corplt' == 'off'){
   melted_cormat_ns[7,3] <- NA 
   melted_cormat_ns[8,3] <- NA 
   
-  p1 <- ggplot(data = melted_cormat_ns, aes(Var2, Var1, fill = value))+
+  
+  # empty hold
+  empty_melt <- melted_cormat_ns
+  empty_melt$value <- rep(NA, length(empty_melt$value))
+  
+  # trying to just get rid of them for the color scale
+  logical_vec <- melted_cormat_ns$value == 1
+  logical_vec[is.na(logical_vec)] <- FALSE # keeping the NAs
+ # melted_cormat_ns <- melted_cormat_ns[!logical_vec,] # subseting the 1's out
+  
+  
+  
+  p1 <- ggplot(data = melted_cormat_ns[!logical_vec,], aes(Var2, Var1, fill = value))+
     geom_tile(color = "white")+ 
-    viridis::scale_fill_viridis(option="rocket",direction=-1,limits=c(0,1), na.value="lightgrey", begin = .2,
+    viridis::scale_fill_viridis(option="rocket",direction=-1,limits=c(0,1), na.value="lightgray", begin = .3, end = .9,
                                 name = "Pearson's \nCorrelation") + coord_fixed() +
     #scale_color_brewer(name="Pearson\nCorrelation", direction = -1, limit = c(0,1)) +
     #scale_fill_continuous(name="Pearson\nCorrelation", limit = c(0,1), low = "yellow", high = "red",  na.value = "white") +
@@ -422,7 +434,7 @@ if('corplt' == 'off'){
   # scale_fill_viridis_c(limits=c(0,1),option="plasma")
   
   p1 <- p1 +
-   geom_text(data = melted_cormat, aes(Var2, Var1, label = sprintf("%0.2f", value)), color = "black", size = 10) +
+   geom_text(data = melted_cormat[!logical_vec,], aes(Var2, Var1, label = sprintf("%0.2f", value)), color = "black", size = 10) +
     theme(
       axis.title.x = element_blank(),
       axis.title.y = element_blank(),
@@ -475,6 +487,9 @@ library(kableExtra)
 cy_1 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
                        data = cog.complete, REML = F)
 
+cy_1_unscaled <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs.unscaled + schooling_yrs.unscaled + (1 | site_id_l),
+                       data = cog.complete, REML = F)
+
 cy_2 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                        data = cog.complete, REML = F) 
@@ -512,6 +527,9 @@ cy_4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex 
 fi_1 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
                        data = cog.complete, REML = F)
 
+fi_1_unscaled <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs.unscaled + schooling_yrs.unscaled + (1 | site_id_l),
+                       data = cog.complete, REML = F)
+
 fi_2 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                    data = cog.complete, REML = F) 
@@ -537,6 +555,8 @@ fi_4 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + 
 
 list_1 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
                        data = cog.complete, REML = F)
+list_1_unscaled <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs.unscaled + schooling_yrs.unscaled + (1 | site_id_l),
+                         data = cog.complete, REML = F)
 
 list_2 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
@@ -593,6 +613,15 @@ list_2_neigh <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs
                            C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                          data = cog.complete, REML = F) 
 
+
+# I don't care about these, I just do it so SES researchers have more info... yet I still don't wanna report them uncorrected
+
+p.adjust(c(summary(cy_2_income)$coefficients[6,5], summary(cy_2_ParEd)$coefficients[6,5], summary(cy_2_neigh)$coefficients[6,5],
+           summary(fi_2_income)$coefficients[6,5], summary(fi_2_ParEd)$coefficients[6,5], summary(fi_2_neigh)$coefficients[6,5],
+           summary(list_2_income)$coefficients[6,5], summary(list_2_ParEd)$coefficients[6,5], summary(list_2_neigh)$coefficients[6,5]),
+         method = "fdr")
+
+
 ########### Bayesian analysis for 2way interactions ###########
 
 library(brms); library(bayestestR); options(buildtools.check = function(action) TRUE )
@@ -624,8 +653,8 @@ library(tidybayes); library(tidyverse)
 
 
 cy_prior <- 
-  prior(normal(.2,15), coef = age_yrs) + 
-  prior(normal(.2,15), coef = schooling_yrs) + 
+  prior(normal(.2,.15), coef = age_yrs) + 
+  prior(normal(.2,.15), coef = schooling_yrs) + 
   prior(normal(.15,.1), coef = pgs) +
   prior(normal(.25,.2), coef = ses) +
   prior(normal(0,.1), coef = pgs:ses) +
@@ -639,6 +668,7 @@ cy_3_bayes_pri <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex +
                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                     prior = cy_prior,
+                    iter = 9000, warmup = 1000, chains = 10,
                   data = cog.complete) 
 
 # prior_summary(cy_3_bayes_pri)
@@ -647,7 +677,7 @@ cy_3_bayes_pri <- brm(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex +
 # cy_3_bayes_rope.05 <- rope(cy_3_bayes, range =  c(-0.05, 0.05))
 # cy_3_bayes_rope.02 <- rope(cy_3_bayes, range =  c(-0.02, 0.02))
 
-cy_3_bayes_rope.08_pri <- rope(cy_3_bayes_pri, range =  c(-0.08, 0.08))
+# cy_3_bayes_rope.08_pri <- rope(cy_3_bayes_pri, range =  c(-0.08, 0.08))
 cy_3_bayes_rope.05_pri <- rope(cy_3_bayes_pri, range =  c(-0.05, 0.05))
 cy_3_bayes_rope.02_pri <- rope(cy_3_bayes_pri, range =  c(-0.02, 0.02))
 
@@ -661,8 +691,8 @@ cy_3_bayes_rope.02_pri <- rope(cy_3_bayes_pri, range =  c(-0.02, 0.02))
 # colnames(cy_rope)[3:8] <- c("ROPE .08","ROPE .08 priors", "ROPE .05","ROPE .05 priors", "ROPE .02", "ROPE .02 priors")
 
 fIQWM_prior <- 
-  prior(normal(.15,15), coef = age_yrs) + 
-  prior(normal(.15,15), coef = schooling_yrs) + 
+  prior(normal(.15,.15), coef = age_yrs) + 
+  prior(normal(.15,.15), coef = schooling_yrs) + 
   prior(normal(.1,.1), coef = pgs) +
   prior(normal(.2,.2), coef = ses) +
   prior(normal(0,.1), coef = pgs:ses) +
@@ -681,13 +711,14 @@ fi_3_bayes_pri <- brm(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + s
                     pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                     C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                   prior = fIQWM_prior,
+                  iter = 9000, warmup = 1000, chains = 10,
                   data = cog.complete) 
 
 # fi_3_bayes_rope.08 <- rope(fi_3_bayes, range =  c(-0.08, 0.08))
 # fi_3_bayes_rope.05 <- rope(fi_3_bayes, range =  c(-0.05, 0.05))
 # fi_3_bayes_rope.02 <- rope(fi_3_bayes, range =  c(-0.02, 0.02))
 
-fi_3_bayes_rope.08_pri <- rope(fi_3_bayes_pri, range =  c(-0.08, 0.08))
+# fi_3_bayes_rope.08_pri <- rope(fi_3_bayes_pri, range =  c(-0.08, 0.08))
 fi_3_bayes_rope.05_pri <- rope(fi_3_bayes_pri, range =  c(-0.05, 0.05))
 fi_3_bayes_rope.02_pri <- rope(fi_3_bayes_pri, range =  c(-0.02, 0.02))
 
@@ -711,13 +742,14 @@ list_3_bayes_pri <- brm(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex 
                       pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                       C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                     prior = fIQWM_prior,
+                    iter = 9000, warmup = 1000, chains = 10,
                     data = cog.complete) 
 
 # list_3_bayes_rope.08 <- rope(list_3_bayes, range =  c(-0.08, 0.08))
 # list_3_bayes_rope.05 <- rope(list_3_bayes, range =  c(-0.05, 0.05))
 # list_3_bayes_rope.02 <- rope(list_3_bayes, range =  c(-0.02, 0.02))
 
-list_3_bayes_rope.08_pri <- rope(list_3_bayes_pri, range =  c(-0.08, 0.08))
+# list_3_bayes_rope.08_pri <- rope(list_3_bayes_pri, range =  c(-0.08, 0.08))
 list_3_bayes_rope.05_pri <- rope(list_3_bayes_pri, range =  c(-0.05, 0.05))
 list_3_bayes_rope.02_pri <- rope(list_3_bayes_pri, range =  c(-0.02, 0.02))
 
@@ -883,22 +915,33 @@ cy_1; cy_1_reps
 fi_1; fi_1_reps
 list_1; list_1_reps
 
+
+
+####### test of grade
+
 table(cog.complete$demo_ed_v2)
 cog.complete[demo_ed_v2 == 5, fifth_grade := TRUE][demo_ed_v2 == 4, fifth_grade := FALSE]
 
-cy_1_g <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + demo_ed_v2 + (1 | site_id_l),
+cy_1_g <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs.unscaled + demo_ed_v2 + (1 | site_id_l),
                             data = cog.complete, REML = F)
-fi_1_g <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + demo_ed_v2 + (1 | site_id_l),
+fi_1_g <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs.unscaled + demo_ed_v2 + (1 | site_id_l),
                             data = cog.complete, REML = F)
-list_1_g <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + demo_ed_v2 + (1 | site_id_l),
+list_1_g <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs.unscaled + demo_ed_v2 + (1 | site_id_l),
                               data = cog.complete, REML = F)
 
-cy_1_5v4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + fifth_grade + (1 | site_id_l),
+cy_1_5v4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs.unscaled + fifth_grade + (1 | site_id_l),
                          data = cog.complete, REML = F)
-fi_1_5v4 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + fifth_grade + (1 | site_id_l),
+fi_1_5v4 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs.unscaled + fifth_grade + (1 | site_id_l),
                          data = cog.complete, REML = F)
-list_1_5v4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + fifth_grade + (1 | site_id_l),
+list_1_5v4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs.unscaled + fifth_grade + (1 | site_id_l),
                            data = cog.complete, REML = F)
+
+
+
+
+sjPlot::plot_model(cy_1_g, type = "diag")
+
+
 
 
 ##################################################################
@@ -918,11 +961,10 @@ list_1_5v4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + fifth_grade + (
 # plot_model(cy_mm2, type = "est") + ylim(0, .5) + theme_minimal()
 # plot_model(list_mm2, type = "est") + ylim(0, .5) + theme_minimal()
 
-performance::check_collinearity(cy_4) %>% 
-  kbl(digits = 2) %>% 
-  save_kable("~/Projects/R_projects/ABCDschooling/tables/vif_cy.html")
-  
-  
+# performance::check_collinearity(cy_4) %>% 
+#   kbl(digits = 2) %>% 
+#   save_kable("~/Projects/R_projects/ABCDschooling/tables/vif_cy.html")
+
   # psych::describe(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
   #                                  age_yrs, age_yrs.unscaled, schooling_yrs, schooling_yrs.unscaled,
   #                                  ses, pgs,
@@ -945,43 +987,17 @@ performance::check_collinearity(cy_4) %>%
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
 #                   file = "~/Projects/R_projects/ABCDschooling/tables/wm_results.html")
 
-# base model tables
-# sjPlot::tab_model(cy_mm2.2, fi_mm2.2, list_mm2.2,
-#                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
-#                   p.style = "numeric",show.se = T, show.ci = NULL,
-#                   file = "~/Projects/R_projects/ABCDschooling/tabs/base_mods.html")
-# 
-# sjPlot::tab_model(cy_mm4, fi_mm4, list_mm4,
-#                   show.loglik = T, show.aic = T, digits = 3, # p.val = "kr"
-#                   p.style = "numeric",show.se = T, show.ci = NULL,
-#                   file = "~/Projects/R_projects/ABCDschooling/tabs/schooling_intermods.html")
+# checking grade not recoded tables
+sjPlot::tab_model(cy_1_5v4, fi_1_5v4, list_1_5v4,
+                  show.loglik = T, show.aic = T, digits = 3,  #p.val = "kr",
+                  p.style = "numeric",show.se = T, show.ci = NULL,
+                  file = "~/Projects/R_projects/ABCDschooling/tables/dummycoded4v5.html")
 
-# making imputation tables... the nice fucntion no longer works...
 
-cy_IMPresults <- setDT(summary(pool(cy_mm2.2_imp)))[
-  setDT(summary(pool(cy_mm4_no3way_imp))), on = 'term'][
-    setDT(summary(pool(cy_mm4_imp))), on = 'term'][
-      , c("statistic", "df", "i.statistic", "i.df", "i.statistic.1", "i.df.1") := NULL][
-        , lapply(.SD, round, 3), term # rounding all values to 3
-      ] #joining full model
-colnames(cy_IMPresults) <- c("term", "est_mm2.2", "se_mm2.2", "p_mm2.2", "est_mm4_no3way", "se_mm4_no3way", "p_mm4_no3way", "est_mm4", "se_mm4", "p_mm4")
-
-# now for fluid
-fi_IMPresults <- setDT(summary(pool(fi_mm2.2_imp)))[
-  setDT(summary(pool(fi_mm4_no3way_imp))), on = 'term'][
-    setDT(summary(pool(fi_mm4_imp))), on = 'term'][
-      , c("statistic", "df", "i.statistic", "i.df", "i.statistic.1", "i.df.1") := NULL][
-        , lapply(.SD, round, 3), term # rounding all values to 3
-        ] #joining full model
-colnames(fi_IMPresults) <- c("term", "est_mm2.2", "se_mm2.2", "p_mm2.2", "est_mm4_no3way", "se_mm4_no3way", "p_mm4_no3way", "est_mm4", "se_mm4", "p_mm4")
-# now for WM
-wm_IMPresults <- setDT(summary(pool(list_mm2.2_imp)))[
-  setDT(summary(pool(list_mm4_no3way_imp))), on = 'term'][
-    setDT(summary(pool(list_mm4_imp))), on = 'term'][
-      , c("statistic", "df", "i.statistic", "i.df", "i.statistic.1", "i.df.1") := NULL][
-        , lapply(.SD, round, 3), term # rounding all values to 3
-        ] #joining full model
-colnames(wm_IMPresults) <- c("term", "est_mm2.2", "se_mm2.2", "p_mm2.2", "est_mm4_no3way", "se_mm4_no3way", "p_mm4_no3way", "est_mm4", "se_mm4", "p_mm4")
+sjPlot::tab_model(cy_1_g, fi_1_g, list_1_g,
+                  show.loglik = T, show.aic = T, digits = 3,  #p.val = "kr",
+                  p.style = "numeric",show.se = T, show.ci = NULL,
+                  file = "~/Projects/R_projects/ABCDschooling/tables/grade_ordinal.html")
 
 # saving the tables
 # library(kableExtra); library(magrittr)
@@ -1048,7 +1064,34 @@ main_eff_Dplt <- ggplot(eff_plt, aes(var, beta, ymin = ci_low, ymax = ci_high, c
   ggExtra::removeGridX() +
   coord_cartesian(expand = FALSE)
 
-ggsave("figs/main_eff_Dplt.png", main_eff_Dplt, width = 10, height = 4)
+# ggsave("figs/main_eff_Dplt.png", main_eff_Dplt, width = 10, height = 4)
+
+
+# SI figure 1
+
+ResP_cy <- sjPlot::plot_model(cy_2_unscaled, type = "eff")$schooling_yrs
+ResP_fi <- sjPlot::plot_model(fi_2_unscaled, type = "eff")$schooling_yrs
+ResP_list <- sjPlot::plot_model(list_2_unscaled, type = "eff")$schooling_yrs
+
+ResP_cy <- ResP_cy + ylim(-1, 1) + labs(title = "", y = "Partial Residuals of cIQ", x = "Years of Schooling") + theme_minimal()
+ResP_fi <- ResP_fi + ylim(-1, 1) + labs(title = "", y = "Partial Residuals of fIQ", x = "Years of Schooling") + theme_minimal()
+ResP_list <- ResP_list + ylim(-1, 1) + labs(title = "", y = "Partial Residuals of WM", x = "Years of Schooling") + theme_minimal()
+
+ResP_cy.s <- sjPlot::plot_model(cy_2, type = "eff")$schooling_yrs
+ResP_fi.s <- sjPlot::plot_model(fi_2, type = "eff")$schooling_yrs
+ResP_list.s <- sjPlot::plot_model(list_2, type = "eff")$schooling_yrs
+
+ResP_cy.s <- ResP_cy.s + ylim(-1, 1) + labs(title = "", y = "Partial Residuals of cIQ", x = "Schooling (s.d.)") + theme_minimal()
+ResP_fi.s <- ResP_fi.s + ylim(-1, 1) + labs(title = "", y = "Partial Residuals of fIQ", x = "Schooling (s.d.)") + theme_minimal()
+ResP_list.s <- ResP_list.s + ylim(-1, 1) + labs(title = "", y = "Partial Residuals of WM", x = "Schooling (s.d.)") + theme_minimal()
+
+ResP <- ResP_cy + ResP_fi + ResP_list # in years
+ResP.s <- ResP_cy.s + ResP_fi.s + ResP_list.s # scaled
+
+
+ResP_SI_panal <- (ResP_cy + ResP_fi + ResP_list) / (ResP_cy.s + ResP_fi.s + ResP_list.s)
+# ggsave("figs/ParRes_schooleff.png", ResP_SI_panal) # , width = 20, height = 10
+
 
 # Figure 2; results of the cog-PGS*SES interaction
 # plot_model(cy_mm_inter, type = "pred", terms = c("pgs [-2, 0, 2]", "ses [-2, 0, 2]")) + theme_minimal()
