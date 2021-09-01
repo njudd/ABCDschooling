@@ -146,8 +146,6 @@ scale_cols <- c(dvs, "pgs_w", "pgs_b", "ses")
 
 sibs <- pgs_b[sibs, on = "rel_family_id"][
   , pgs_w := pgs - pgs_b
-  ][
-    , (scale_cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=scale_cols # standardizing all the relevant info
   ]
 
 
@@ -163,8 +161,13 @@ sibs <- sibs[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_
          C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C15, C16, C17, C18, C19, C20)]
 
 
+# getting rid of single families
+onePfamilies <- as.data.frame(table(sibs$rel_family_id))$Var1[as.data.frame(table(sibs$rel_family_id))$Freq==1]
+sibs <- sibs[!rel_family_id %in% onePfamilies][
+  , (scale_cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=scale_cols # standardizing all the relevant info
+]
 
-# put them in as covariates
+#starting models
 
 cy_mod <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ pgs_w + pgs_b +
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + 
@@ -203,8 +206,14 @@ summary(list_mod); summary(list_mod_ses)
 
 
 
+p.adjust(c(summary(cy_mod)$coefficients[2, 5], summary(cy_mod)$coefficients[3, 5],
+           summary(fi_mod)$coefficients[2, 5], summary(fi_mod)$coefficients[3, 5], 
+           summary(list_mod)$coefficients[2, 5], summary(list_mod)$coefficients[3, 5]),
+         method = "fdr")
 
 
+
+summary(cy_mod);summary(fi_mod);summary(list_mod)
 
 
 
