@@ -7,6 +7,8 @@
 
 # https://stefvanbuuren.name/fimd/sec-mlguidelines.html
 
+# if you don't standardize everything you get this error: Error in str2lang(x) : <text>:1:15: unexpected ')' 1: dv._lmer~1+(1|)
+
 imp_3way <- function(d){
   print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   print("this function is hard coded!!!!!")
@@ -15,8 +17,19 @@ imp_3way <- function(d){
   
   require(mice); require(miceadds)
   
+  
+# impute 1 & 2 and see if it breaks, see if you can do one  
+  
+  
 # Code when there is no interactions
-# d = cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected.s", "ses_ppca.s", "pgs.s", "age_yrs", "schooling_yrs", "sex")]
+# d = cryst_data_pca[, c("site_id_l", "nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "sex", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10",
+#                        "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")]
+# 
+# # standardizing vars
+# cols <- c("nihtbx_cryst_uncorrected", "ses", "pgs", "age_yrs", "schooling_yrs", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10",
+#           "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
+# d[, (cols) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=cols]
+# 
 # 
 # pred <- make.predictorMatrix(d)
 # 
@@ -31,8 +44,13 @@ imp_3way <- function(d){
 # imp <- mice(d, pred = pred, meth = "2l.pmm", seed = 919,
 #             m = 10, print = FALSE)
 # 
-# ct <- with(imp, lmer(nihtbx_cryst_uncorrected.s ~ 1 + age_yrs + schooling_yrs + sex + pgs.s + ses_ppca.s + (1 | site_id_l), REML = FALSE))
+# ct <- with(imp, lmer(nihtbx_cryst_uncorrected ~ 1 + age_yrs + schooling_yrs + sex + pgs + ses_ppca.s + 
+#                        C1 + C2 + C3 +C4 + C5 + C6 + C7 + C8 + C9 +C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l), REML = FALSE))
 # summary(pool(ct))
+
+
+
+
 
 
   colnames(d) <- c("site", "dv", "ses", "pgs", "age", "school", "sex")
