@@ -321,6 +321,26 @@ cog.complete$ses <- -cog.complete$ses # sign flipping
 # rescalling them all
 cog.complete <- cog.complete[, (c(all_cols, "ses")) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=c(all_cols, "ses")]
 
+
+# corplot & hist of them subtracted
+
+forREVa <- ggplot(cog.complete, aes(age_yrs, schooling_yrs)) +
+  geom_jitter(alpha = .2, color = "blue") +
+  geom_smooth(method = "lm", color = "black") +
+  labs(x = "age_yrs (s.d.)", y = "schooling_yrs (s.d.)") +
+  theme_minimal(base_size = 18)
+
+cog.complete$delta_ageSchoolstd <- cog.complete$age_yrs - cog.complete$schooling_yrs
+
+forRevb <- ggplot(cog.complete, aes(x = delta_ageSchoolstd)) +
+  geom_histogram(fill = "blue", alpha = .6, bins = 40) +
+  labs(x = "Age (s.d.) subtracted from schooling (s.d.)") +
+  theme_minimal(base_size = 18)
+
+
+revplt <- forREVa + forRevb + plot_annotation(tag_levels = "a")
+# ggsave("~/Desktop/revplt.png", revplt)
+
 ##################################################################
 ########### plotting descript (not essential to run) ###########  ###### 
 
