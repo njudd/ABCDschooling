@@ -30,9 +30,6 @@
 
 
 
-
-
-
 # NDA 3.0 Release Notes ABCD README FIRST
 # this document has all the relevant info
 
