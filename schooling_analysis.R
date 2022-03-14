@@ -95,8 +95,16 @@
 ########### Start of script: loading & cleaning data ########### 
 
 setwd("~/Projects/R_projects/ABCDschooling/")
-library(data.table); library(ggplot2); library(effectsize); library(lubridate); library(patchwork)
-library(lme4); library(sjPlot); library(performance); library(mice); library(broom.mixed) # need for pool in mice
+
+
+set.seed(42)
+
+if (!require(pacman)) {
+  install.packages("pacman")
+}
+
+pacman::p_load(ggplot2, data.table, effectsize, lubridate, patchwork, lavaan, lme4, sjPlot, performance, broom.mixed, mice)
+
 source('funcs/vec_to_fence.R')
 source('funcs/imp_3way.R')
 
@@ -117,7 +125,7 @@ cog <- fread("sed -e '2d' data/abcd_tbss01.txt")
 site <- fread("sed -e '2d' data/StudySiteBLgrade/abcd_lt01.txt")
 site <- site[eventname =='baseline_year_1_arm_1'][, .(subjectkey, site_id_l)]
 grade <- fread("sed -e '2d' data/StudySiteBLgrade/pdem02.txt")
-grade <- grade[, .(subjectkey, demo_ed_v2, demo_race_a_p___11, demo_race_a_p___10, demo_prnt_ed_v2, demo_prtnr_ed_v2, demo_comb_income_v2)]
+grade <- grade[, .(subjectkey, demo_ed_v2, demo_race_a_p___10, demo_prnt_ed_v2, demo_prtnr_ed_v2, demo_comb_income_v2)]
 grade <- grade[site, on= "subjectkey"]
 
 # demo_prnt_race_a_v2___10 # parental race white
@@ -157,7 +165,10 @@ grade <- grade[subjectkey %in% incl$subjectkey]
 
 cog <- cog[eventname == "baseline_year_1_arm_1"][
   , .(subjectkey, interview_date, interview_age, sex, 
-      nihtbx_list_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected)][
+      nihtbx_list_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected, 
+      nihtbx_picvocab_uncorrected, nihtbx_reading_uncorrected, 
+      nihtbx_flanker_uncorrected, nihtbx_list_uncorrected, nihtbx_cardsort_uncorrected, nihtbx_pattern_uncorrected, nihtbx_picture_uncorrected
+  )][
         ][
           grade, on = "subjectkey"#, nomatch = 0 # joining grade on subjectkey
           ][
@@ -228,6 +239,61 @@ cog <- fread('data/pca_data_ethnicity_PC20.txt', fill = T)[,1:22][cog, on = "sub
 cog.complete <- cog[kbi_y_grade_repeat ==0] # 9% of subjects gone
 
 
+### making a g factor
+
+
+#### adding two tasks that are G loaded and I ignored in my study
+
+matrix <- fread("sed -e '2d' ~/ABCDStudyNDA/abcd_ps01.txt")
+matrix <- matrix[, .(subjectkey, eventname, pea_wiscv_trs, pea_wiscv_tss)][
+  eventname == "baseline_year_1_arm_1"
+][, eventname := NULL]
+
+cog.complete <- matrix[cog.complete, on = "subjectkey"]
+
+
+# rate of correct responses in the emotional nback fMRI task
+abcd_mrinback02 <- fread("sed -e '2d' ~/ABCDStudyNDA/abcd_mrinback02.txt")
+abcd_mrinback02 <- abcd_mrinback02[, .(subjectkey, eventname, tfmri_nb_all_beh_ctotal_rate)][
+  eventname == "baseline_year_1_arm_1"]
+
+cog.complete <- abcd_mrinback02[cog.complete, on = "subjectkey"]
+
+allTasks <- c("nihtbx_picvocab_uncorrected", "nihtbx_reading_uncorrected", 
+              "nihtbx_flanker_uncorrected", "nihtbx_list_uncorrected", "nihtbx_cardsort_uncorrected", "nihtbx_pattern_uncorrected", "nihtbx_picture_uncorrected",
+              "tfmri_nb_all_beh_ctotal_rate", "pea_wiscv_trs")
+
+cog.complete <- cog.complete[, (allTasks) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=allTasks]
+
+
+g_factor <- '
+g =~ nihtbx_picvocab_uncorrected + nihtbx_reading_uncorrected + nihtbx_flanker_uncorrected + nihtbx_list_uncorrected + nihtbx_cardsort_uncorrected + nihtbx_pattern_uncorrected + nihtbx_picture_uncorrected + tfmri_nb_all_beh_ctotal_rate + pea_wiscv_trs
+
+# nihtbx_picvocab_uncorrected ~~  nihtbx_reading_uncorrected + nihtbx_flanker_uncorrected + nihtbx_list_uncorrected + nihtbx_cardsort_uncorrected + nihtbx_pattern_uncorrected + nihtbx_picture_uncorrected + pea_wiscv_trs + tfmri_nb_all_beh_ctotal_rate
+# nihtbx_reading_uncorrected ~~ nihtbx_flanker_uncorrected + nihtbx_list_uncorrected + nihtbx_cardsort_uncorrected + nihtbx_pattern_uncorrected + nihtbx_picture_uncorrected  + pea_wiscv_trs + tfmri_nb_all_beh_ctotal_rate
+# nihtbx_flanker_uncorrected ~~ nihtbx_list_uncorrected + nihtbx_cardsort_uncorrected + nihtbx_pattern_uncorrected + nihtbx_picture_uncorrected + pea_wiscv_trs + tfmri_nb_all_beh_ctotal_rate
+# nihtbx_list_uncorrected ~~ nihtbx_cardsort_uncorrected + nihtbx_pattern_uncorrected + nihtbx_picture_uncorrected + pea_wiscv_trs + tfmri_nb_all_beh_ctotal_rate
+# nihtbx_cardsort_uncorrected ~~ nihtbx_pattern_uncorrected + nihtbx_picture_uncorrected + pea_wiscv_trs + tfmri_nb_all_beh_ctotal_rate
+# nihtbx_pattern_uncorrected ~~ nihtbx_picture_uncorrected + pea_wiscv_trs + tfmri_nb_all_beh_ctotal_rate
+# nihtbx_picture_uncorrected ~~ pea_wiscv_trs + tfmri_nb_all_beh_ctotal_rate
+# pea_wiscv_trs ~~ tfmri_nb_all_beh_ctotal_rate
+
+nihtbx_picvocab_uncorrected ~~ nihtbx_reading_uncorrected # both cryst tasks 
+nihtbx_list_uncorrected ~~ tfmri_nb_all_beh_ctotal_rate # both WM capacity
+
+# mod indicies modindices(fit, sort = TRUE, maximum.number = 5)
+nihtbx_cardsort_uncorrected ~~  nihtbx_pattern_uncorrected
+nihtbx_flanker_uncorrected ~~ nihtbx_cardsort_uncorrected
+nihtbx_flanker_uncorrected ~~  nihtbx_pattern_uncorrected
+
+g ~~ g
+'
+
+fit <- sem(g_factor, data = cog.complete,  estimator='mlr',fixed.x=FALSE, missing='fiml')
+summary(fit, standardized = TRUE, fit.measures = T)
+
+cog.complete$g <- as.vector(predict(fit))
+
 # IMPUTATION NOTES
 # very sad; it is impossible to impute with PCs. They are orthogonal, therefore loads of singularity warnings
 # and eventually stops working with higher PCs.
@@ -247,7 +313,7 @@ cog.complete <- cog[kbi_y_grade_repeat ==0] # 9% of subjects gone
 
 
 # data tidy, making one complete dataset
-dvs <- c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected")
+dvs <- c("nihtbx_cryst_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_list_uncorrected", "g")
 dvs_plus <- c(dvs, "schooling_yrs", "age_yrs")
 all_cols <- c(dvs_plus, "pgs",
                  "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20")
@@ -401,10 +467,20 @@ if('corplt' == 'off'){
     return(cormat)
   }
   
+  # the reviewer wants the corrplot PC corrected, this is fucking stupid. That's the point of the model yet they are certian on it...
+  # makes little sense to treat PCs as a special covariate..
+  
+  
+  reshold <- copy(cog.complete)
+  COLS <- c("schooling_yrs", "age_yrs", "pgs", "ses", "nihtbx_list_uncorrected", "nihtbx_fluidcomp_uncorrected", "nihtbx_cryst_uncorrected")
+  
+  reshold <- reshold[, (COLS) := lapply(.SD, function(x) lm(
+    x ~ C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20)$residuals), .SDcols=COLS] # residualizing the PCs
+  
   # making a corplot
-  checking_p <- Hmisc::rcorr(as.matrix(cog.complete[, .(schooling_yrs, age_yrs, pgs, ses,
+  checking_p <- Hmisc::rcorr(as.matrix(reshold[, .(schooling_yrs, age_yrs, pgs, ses,
                                                         nihtbx_list_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected)]))
-  cormat <- round(cor(cog.complete[, .(schooling_yrs, age_yrs, pgs, ses,
+  cormat <- round(cor(reshold[, .(schooling_yrs, age_yrs, pgs, ses,
                                        nihtbx_list_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected)], use = "pairwise.complete.obs"),2) # for upper
   
   # renaming vars
@@ -468,7 +544,20 @@ if('corplt' == 'off'){
   p1
   dev.off()
   
+  
+  # uncorrected SI table with SES componments & all cog?
+  
+  
+  
+  
+  
+  
 }
+
+
+
+
+
 
 # apa table
 # apaTables::apa.cor.table(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
@@ -596,6 +685,25 @@ list_4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex
                          schooling_yrs:ses:pgs + 
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                        data = cog.complete, REML = F) 
+
+
+########### Posthoc g analysis ###########
+
+
+g_3 <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                           pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = cog.complete, REML = F) 
+
+
+g_4 <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                           pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                           schooling_yrs:ses:pgs + 
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = cog.complete, REML = F) 
+summary(g_3); summary(g_4)
+
+
 
 ########### SES subcomponent analysis ###########
 
