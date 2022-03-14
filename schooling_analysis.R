@@ -120,7 +120,7 @@ cog <- fread("sed -e '2d' data/abcd_tbss01.txt")
 site <- fread("sed -e '2d' data/StudySiteBLgrade/abcd_lt01.txt")
 site <- site[eventname =='baseline_year_1_arm_1'][, .(subjectkey, site_id_l)]
 grade <- fread("sed -e '2d' data/StudySiteBLgrade/pdem02.txt")
-grade <- grade[, .(subjectkey, demo_ed_v2, demo_race_a_p___11, demo_prnt_ed_v2, demo_prtnr_ed_v2, demo_comb_income_v2)]
+grade <- grade[, .(subjectkey, demo_ed_v2, demo_race_a_p___11, demo_race_a_p___10, demo_prnt_ed_v2, demo_prtnr_ed_v2, demo_comb_income_v2)]
 grade <- grade[site, on= "subjectkey"]
 
 # demo_prnt_race_a_v2___10 # parental race white
@@ -808,7 +808,7 @@ cy_Bayes_plt <- cy_3_bayes_pri %>%
   geom_vline(xintercept = c(0)) +
   geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),fill="gray", color = NA,alpha=0.05) + # weird fill actually make the color change... 
   stat_slab(aes(fill = stat(cut_cdf_qi(cdf, .width = .95,labels = scales::percent_format()))), alpha = .5) +
-  scale_fill_manual(values = "blue", na.value = "lightblue") + #, na.translate = FALSE
+  scale_fill_manual(values = "#E91E63", na.value = "#F8BBD0") + #, na.translate = FALSE
   geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
   labs(y = "", x = "cIQ posterior distribution (s.d.)") +
   scale_x_continuous(limits = c(-.1, .1), breaks = c(-.1, -.05, 0, .05, .1)) +
@@ -826,7 +826,7 @@ fi_Bayes_plt <- fi_3_bayes_pri %>%
   geom_vline(xintercept = c(0)) +
   geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),fill="gray", color = NA,alpha=0.05) + # weird fill actually make the color change... 
   stat_slab(aes(fill = stat(cut_cdf_qi(cdf, .width = .95,labels = scales::percent_format()))), alpha = .5) +
-  scale_fill_manual(values = c("blue"), na.value = "lightblue") +
+  scale_fill_manual(values = c("#673AB7"), na.value = "#D1C4E9") +
   geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
   labs(y = "", x = "fIQ posterior distribution (s.d.)") +
   scale_x_continuous(limits = c(-.1, .1), breaks = c(-.1, -.05, 0, .05, .1)) +
@@ -844,7 +844,7 @@ list_Bayes_plt <- list_3_bayes_pri %>%
   geom_vline(xintercept = c(0)) +
   geom_rect(aes(xmin=-.02,xmax=.02,ymin=-Inf,ymax=Inf),fill="gray", color = NA,alpha=0.05) + # weird fill actually make the color change... 
   stat_slab(aes(fill = stat(cut_cdf_qi(cdf, .width = .95,labels = scales::percent_format()))), alpha = .5) +
-  scale_fill_manual(values = c("blue"), na.value = "lightblue") +
+  scale_fill_manual(values = c("#009688"), na.value = "#B2DFDB") +
   geom_vline(xintercept = c(-.05, .05), linetype = "dashed") +
   labs(y = "", x = "WM posterior distribution (s.d.)") +
   scale_x_continuous(limits = c(-.1, .1), breaks = c(-.1, -.05, 0, .05, .1)) +
@@ -858,7 +858,7 @@ list_Bayes_plt <- list_3_bayes_pri %>%
 
 
 ROPE_plt <- cy_Bayes_plt + fi_Bayes_plt + list_Bayes_plt + plot_annotation(tag_levels = 'a')
-# ggsave("figs/ROPE_plt.png", ROPE_plt, width = 15.4, height = 9.65)
+# ggsave("figs/ROPE_plt_new.png", ROPE_plt, width = 15.4, height = 9.65)
 
 
 
@@ -1066,7 +1066,7 @@ eff_plt <- data.table(DV = c(rep("fIQ", 4), rep("cIQ", 4), rep("WM", 4)),
              as.numeric(confint(fi_2_unscaled)[c(4,5,7,8), 2]),as.numeric(confint(cy_2_unscaled)[c(4,5,7,8), 2]), as.numeric(confint(list_2_unscaled)[c(4,5,7,8), 2])
            ))
 
-barCOLS <- c('#DE3163', '#6495ED', '#9FE2BF') # a vector of colors
+barCOLS <- c('#E91E63', '#673AB7', '#009688') # a vector of colors
 
 eff_plt$var <- factor(eff_plt$var, levels = c("Age 1yr", "School 1yr", "cogPGS", "SES")) # making var a factor for ggplot, ordering them as I wish as well
 eff_plt$DV <- factor(eff_plt$DV) # making the DV as a factor
@@ -1084,7 +1084,7 @@ main_eff_Dplt <- ggplot(eff_plt, aes(var, beta, ymin = ci_low, ymax = ci_high, c
   ggExtra::removeGridX() +
   coord_cartesian(expand = FALSE)
 
-# ggsave("figs/main_eff_Dplt.png", main_eff_Dplt, width = 10, height = 4)
+# ggsave("figs/main_eff_Dplt_new.png", main_eff_Dplt, width = 10, height = 4)
 
 
 # SI figure 1
