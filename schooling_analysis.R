@@ -553,6 +553,11 @@ if('corplt' == 'off'){
                                                    g, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected, 
                                                 nihtbx_picvocab_uncorrected, nihtbx_reading_uncorrected, nihtbx_flanker_uncorrected, nihtbx_list_uncorrected, nihtbx_cardsort_uncorrected, nihtbx_pattern_uncorrected, nihtbx_picture_uncorrected,
                                                 tfmri_nb_all_beh_ctotal_rate, pea_wiscv_trs)]))
+  RcmdrMisc::rcorr.adjust(as.matrix(hold[, .(pgs, ses, demo_comb_income_v2, ParEd_max, reshist_addr1_adi_wsum,
+                                             g, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected, 
+                                             nihtbx_picvocab_uncorrected, nihtbx_reading_uncorrected, nihtbx_flanker_uncorrected, nihtbx_list_uncorrected, nihtbx_cardsort_uncorrected, nihtbx_pattern_uncorrected, nihtbx_picture_uncorrected,
+                                             tfmri_nb_all_beh_ctotal_rate, pea_wiscv_trs)]))
+  
   cormat <- round(cor(hold[, .(pgs, ses, demo_comb_income_v2, ParEd_max, reshist_addr1_adi_wsum,
                                g, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected, 
                                nihtbx_picvocab_uncorrected, nihtbx_reading_uncorrected, nihtbx_flanker_uncorrected, nihtbx_list_uncorrected, nihtbx_cardsort_uncorrected, nihtbx_pattern_uncorrected, nihtbx_picture_uncorrected,
@@ -565,7 +570,7 @@ if('corplt' == 'off'){
   
   upper_tri <- get_upper_tri(cormat)
   melted_cormat <- melt(upper_tri, na.rm = TRUE)
-  
+
   
   
   p2 <- ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
@@ -1185,17 +1190,27 @@ sjPlot::plot_model(cy_1_g, type = "diag")
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
 #                   file = "~/Projects/R_projects/ABCDschooling/tables/wm_results.html")
 
+# sjPlot::tab_model(g_1, g_2, g_3, g_4,
+#                   show.loglik = T, show.aic = T, digits = 3, p.adjust = "fdr",
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/g_results_fdr.html")
+# 
+# sjPlot::tab_model(cy_4_EurA, fi_4_EurA, list_4_EurA, g_4_EurA,
+#                   show.loglik = T, show.aic = T, digits = 3, p.adjust = "fdr",
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/EurA4_results_fdr.html")
+
 # checking grade not recoded tables
-sjPlot::tab_model(cy_1_5v4, fi_1_5v4, list_1_5v4,
-                  show.loglik = T, show.aic = T, digits = 3,  #p.val = "kr",
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tables/dummycoded4v5.html")
-
-
-sjPlot::tab_model(cy_1_g, fi_1_g, list_1_g,
-                  show.loglik = T, show.aic = T, digits = 3,  #p.val = "kr",
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tables/grade_ordinal.html")
+# sjPlot::tab_model(cy_1_5v4, fi_1_5v4, list_1_5v4,
+#                   show.loglik = T, show.aic = T, digits = 3,  #p.val = "kr",
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/dummycoded4v5.html")
+# 
+# 
+# sjPlot::tab_model(cy_1_g, fi_1_g, list_1_g,
+#                   show.loglik = T, show.aic = T, digits = 3,  #p.val = "kr",
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/grade_ordinal.html")
 
 # saving the tables
 # library(kableExtra); library(magrittr)
