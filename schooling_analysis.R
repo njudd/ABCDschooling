@@ -547,9 +547,61 @@ if('corplt' == 'off'){
   
   # uncorrected SI table with SES componments & all cog?
   
+  hold <- copy(cog.complete)
+  # making a corplot
+  checking_p <- Hmisc::rcorr(as.matrix(hold[, .(pgs, ses, demo_comb_income_v2, ParEd_max, reshist_addr1_adi_wsum,
+                                                   g, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected, 
+                                                nihtbx_picvocab_uncorrected, nihtbx_reading_uncorrected, nihtbx_flanker_uncorrected, nihtbx_list_uncorrected, nihtbx_cardsort_uncorrected, nihtbx_pattern_uncorrected, nihtbx_picture_uncorrected,
+                                                tfmri_nb_all_beh_ctotal_rate, pea_wiscv_trs)]))
+  cormat <- round(cor(hold[, .(pgs, ses, demo_comb_income_v2, ParEd_max, reshist_addr1_adi_wsum,
+                               g, nihtbx_fluidcomp_uncorrected, nihtbx_cryst_uncorrected, 
+                               nihtbx_picvocab_uncorrected, nihtbx_reading_uncorrected, nihtbx_flanker_uncorrected, nihtbx_list_uncorrected, nihtbx_cardsort_uncorrected, nihtbx_pattern_uncorrected, nihtbx_picture_uncorrected,
+                               tfmri_nb_all_beh_ctotal_rate, pea_wiscv_trs)], use = "pairwise.complete.obs"),2) # for upper
+  
+  # renaming vars
+  rownames(cormat) <- c("cogPGS", "SES", "income", "ParEdu", "Neigh", "g", "fIQ", "cIQ", "PCVCB", "RDNG", "FLNKR", "LST (WM)","CRDSRT", "PTTRN", "PCTR", "Nback WM", "PEA")
+  colnames(cormat) <- c("cogPGS", "SES", "income", "ParEdu", "Neigh", "g", "fIQ", "cIQ", "PCVCB", "RDNG", "FLNKR", "LST (WM)","CRDSRT", "PTTRN", "PCTR", "Nback WM", "PEA")
+  cormat_metled <- data.table::melt(cormat)
+  
+  upper_tri <- get_upper_tri(cormat)
+  melted_cormat <- melt(upper_tri, na.rm = TRUE)
   
   
   
+  p2 <- ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+    geom_tile(color = "white")+ theme_minimal()+
+    scale_fill_distiller(name="Pearson Correlation", limit = c(0,1), direction = 1, palette = "Reds")+ # YlOrRd
+    #scale_color_brewer(name="Pearson\nCorrelation", direction = -1, limit = c(0,1)) + 
+    #scale_fill_continuous(name="Pearson\nCorrelation", limit = c(0,1), low = "yellow", high = "red",  na.value = "white") + 
+    #scale_fill_viridis(name="Pearson\nCorrelation", limit = c(.25,.86), na.value = "white", option = "D", direction= 1) +
+    theme_minimal()+ 
+    theme(axis.text.x = element_text(angle = 65, vjust = 1, 
+                                     size = 25, hjust = 1),
+          axis.text.y = element_text(size = 25))+
+    coord_fixed()
+  
+  p2 <- p2 + 
+    geom_text(aes(Var2, Var1, label = sprintf("%0.2f", value)), color = "black", size = 10) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      # axis.text.y = element_blank(), # removing y axis text
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.title = element_text(size = 25),
+      legend.text = element_text(size = 20),
+      legend.justification = c(1, 0),
+      legend.position = c(0.5, 0.75),
+      legend.direction = "horizontal") +
+    guides(fill = guide_colorbar(barwidth = 20, barheight = 2,
+                                 title.position = "top", title.hjust = 0.5))
+  
+    
+  png("~/Projects/R_projects/ABCDschooling/figs/corplt_SI.png", 1300, 1200)
+  p2
+  dev.off()
   
   
 }
