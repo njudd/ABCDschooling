@@ -597,19 +597,11 @@ if('corplt' == 'off'){
       legend.direction = "horizontal") +
     guides(fill = guide_colorbar(barwidth = 20, barheight = 2,
                                  title.position = "top", title.hjust = 0.5))
-  
     
   png("~/Projects/R_projects/ABCDschooling/figs/corplt_SI.png", 1300, 1200)
   p2
   dev.off()
-  
-  
 }
-
-
-
-
-
 
 # apa table
 # apaTables::apa.cor.table(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
@@ -625,6 +617,11 @@ if('corplt' == 'off'){
 
 library(kableExtra)
 
+
+# Self declared European
+
+EurA <- copy(cog.complete)
+EurA <- EurA[demo_race_a_p___10 == 1]
 
 # psych::describe(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
 #                                  age_yrs, age_yrs.unscaled, schooling_yrs, schooling_yrs.unscaled,
@@ -739,23 +736,47 @@ list_4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex
                        data = cog.complete, REML = F) 
 
 
-########### Posthoc g analysis ###########
+########### Post hoc g analysis ###########
 
-
+g_1 <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + (1 | site_id_l),
+                         data = cog.complete, REML = F)
+g_2 <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = cog.complete, REML = F) 
 g_3 <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                            pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                            C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                          data = cog.complete, REML = F) 
-
-
 g_4 <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses + 
                            pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
                            schooling_yrs:ses:pgs + 
                            C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
-                         data = cog.complete, REML = F) 
-summary(g_3); summary(g_4)
+                         data = cog.complete, REML = F)
 
 
+########### Post hoc white declared ###########
+
+cy_4_EurA <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                         schooling_yrs:ses:pgs + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = EurA, REML = F) 
+
+fi_4_EurA <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                         schooling_yrs:ses:pgs + 
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = EurA, REML = F) 
+list_4_EurA <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                           pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                           schooling_yrs:ses:pgs + 
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = EurA, REML = F)
+g_4_EurA <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                        pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                        schooling_yrs:ses:pgs + 
+                        C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                      data = EurA, REML = F)
 
 ########### SES subcomponent analysis ###########
 
