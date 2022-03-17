@@ -338,6 +338,7 @@ cog.complete$reshist_addr1_adi_wsum <- -cog.complete$reshist_addr1_adi_wsum # ne
 
 # gonna do probabilitics PCA to get the SES PCA scores and than MICE for the other values
 # mice::md.pattern(cog[, .(ParEd_max.s, demo_comb_income_v2.s, reshist_addr1_adi_wsum.s)], plot = F)
+set.seed(42)
 cog.complete$ses <- as.numeric(pcaMethods::ppca(BiocGenerics::t(cog.complete[, .(ParEd_max, demo_comb_income_v2, reshist_addr1_adi_wsum)]), nPcs = 1, seed = 42)@loadings)
 # ppca has a .999 correlation for the non-missing values with normal pca
 
@@ -357,7 +358,7 @@ cog.complete$ses <- as.numeric(scale(cog.complete$ses))
 cog.complete <- cog.complete[!is.na(cog.complete$ses),]
 
 # this SES is done with the DNA missing people!!!
-cog.complete$SES_all <- cog.complete$ses
+cog.complete$SES_all <- -cog.complete$ses # also sign flipping
 cog.complete$ses <- rep(NA, length(cog.complete$ses))
 
 # so to figure out exactly how many are excluded due to dna I need here to find a group of all subs had DNA not been excluded ONLY
@@ -366,7 +367,13 @@ cog.complete$ses <- rep(NA, length(cog.complete$ses))
 #MAR assumption, showing that those without PGS's happen to be a different population
 cog.complete$missing_PGS <- is.na(cog.complete$pgs)
 sum(cog.complete$missing_PGS)
-summary(lm(SES_all ~ missing_PGS, data = cog.complete))
+
+# MAR_1 <- lm(SES_all ~ missing_PGS, data = cog.complete)
+# MAR_2 <- lm(SES_all ~ demo_race_a_p___10, data = cog.complete)
+
+summary(lm.beta::lm.beta(lm(SES_all ~ missing_PGS, data = cog.complete)))
+summary(lm.beta::lm.beta(lm(SES_all ~ demo_race_a_p___10, data = cog.complete)))
+
 
 # I don't think that this MAR missingness will substantially change the data, because I think its site DNA only missingness
 # sites are not SES representative. Also I did the whole imputation accidently without genetic PCs and the main effect results
@@ -627,6 +634,8 @@ library(kableExtra)
 
 EurA <- copy(cog.complete)
 EurA <- EurA[demo_race_a_p___10 == 1]
+EurA <- EurA[, (c(all_cols, "ses")) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=c(all_cols, "ses")]
+
 
 # psych::describe(cog.complete[, .(nihtbx_cryst_uncorrected, nihtbx_fluidcomp_uncorrected, nihtbx_list_uncorrected,
 #                                  age_yrs, age_yrs.unscaled, schooling_yrs, schooling_yrs.unscaled,
@@ -1198,7 +1207,7 @@ sjPlot::plot_model(cy_1_g, type = "diag")
 # sjPlot::tab_model(cy_4_EurA, fi_4_EurA, list_4_EurA, g_4_EurA,
 #                   show.loglik = T, show.aic = T, digits = 3, p.adjust = "fdr",
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
-#                   file = "~/Projects/R_projects/ABCDschooling/tables/EurA4_results_fdr.html")
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/EurA4_results_fdr_reStd.html")
 
 # checking grade not recoded tables
 # sjPlot::tab_model(cy_1_5v4, fi_1_5v4, list_1_5v4,
