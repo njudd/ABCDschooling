@@ -630,10 +630,25 @@ if('corplt' == 'off'){
 library(kableExtra)
 
 
-# Self declared European
+# European PC
+
+set.seed(42)
+
+K_MEAN = 4
+
+PC1_K<-kmeans(cog.complete$C1, K_MEAN)
+PC2_K<-kmeans(cog.complete$C2, K_MEAN)
+
+cog.complete$PC1.Cluster<-PC1_K$cluster
+cog.complete$PC2.Cluster<-PC2_K$cluster
+
+
+MAX_PC1<-ifelse(match(max(table(cog.complete$PC1.Cluster, cog.complete$PC2.Cluster)), table(cog.complete$PC1.Cluster, cog.complete$PC2.Cluster)) %% K_MEAN == 0, K_MEAN, match(max(table(cog.complete$PC1.Cluster, cog.complete$PC2.Cluster)), table(cog.complete$PC1.Cluster, cog.complete$PC2.Cluster)) %% K_MEAN)
+MAX_PC2<-ceiling(match(max(table(cog.complete$PC1.Cluster, cog.complete$PC2.Cluster)), table(cog.complete$PC1.Cluster, cog.complete$PC2.Cluster))/K_MEAN)
 
 EurA <- copy(cog.complete)
-EurA <- EurA[demo_race_a_p___10 == 1]
+EurA <- EurA[PC1.Cluster == MAX_PC1 & PC2.Cluster == MAX_PC2]
+#table(EurA$demo_race_a_p___10)
 EurA <- EurA[, (c(all_cols, "ses")) := lapply(.SD, function(x) as.numeric(scale(x))), .SDcols=c(all_cols, "ses")]
 
 
@@ -1204,10 +1219,10 @@ sjPlot::plot_model(cy_1_g, type = "diag")
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
 #                   file = "~/Projects/R_projects/ABCDschooling/tables/g_results_fdr.html")
 # 
-# sjPlot::tab_model(cy_4_EurA, fi_4_EurA, list_4_EurA, g_4_EurA,
-#                   show.loglik = T, show.aic = T, digits = 3, p.adjust = "fdr",
-#                   p.style = "numeric",show.se = T, show.ci = NULL,
-#                   file = "~/Projects/R_projects/ABCDschooling/tables/EurA4_results_fdr_reStd.html")
+sjPlot::tab_model(cy_4_EurA, fi_4_EurA, list_4_EurA, g_4_EurA,
+                  show.loglik = T, show.aic = T, digits = 3, p.adjust = "fdr",
+                  p.style = "numeric",show.se = T, show.ci = NULL,
+                  file = "~/Projects/R_projects/ABCDschooling/tables/EurA4_results_fdr_reStd.html")
 
 # checking grade not recoded tables
 # sjPlot::tab_model(cy_1_5v4, fi_1_5v4, list_1_5v4,
