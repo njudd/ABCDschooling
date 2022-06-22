@@ -706,6 +706,15 @@ cy_4 <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex 
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                    data = cog.complete, REML = F) 
 
+cy_4_Keller <- lmerTest::lmer(nihtbx_cryst_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                         schooling_yrs:ses:pgs + 
+                         C1*ses + C2*ses + C3*ses + C4*ses + C5*ses + C6*ses + C7*ses + C8*ses + C9*ses + C10*ses + C11*ses + C12*ses + C13*ses + C14*ses + C15*ses + C16*ses + C17*ses + C18*ses + C19*ses + C20*ses +
+                         C1*pgs + C2*pgs + C3*pgs + C4*pgs + C5*pgs + C6*pgs + C7*pgs + C8*pgs + C9*pgs + C10*pgs + C11*pgs + C12*pgs + C13*pgs + C14*pgs + C15*pgs + C16*pgs + C17*pgs + C18*pgs + C19*pgs + C20*pgs +
+                         C1*schooling_yrs + C2*schooling_yrs + C3*schooling_yrs + C4*schooling_yrs + C5*schooling_yrs + C6*schooling_yrs + C7*schooling_yrs + C8*schooling_yrs + C9*schooling_yrs + C10*schooling_yrs + C11*schooling_yrs + C12*schooling_yrs + C13*schooling_yrs + C14*schooling_yrs + C15*schooling_yrs + C16*schooling_yrs + C17*schooling_yrs + C18*schooling_yrs + C19*schooling_yrs + C20*schooling_yrs +
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog.complete, REML = F) 
+
 # fluid IQ
 
 fi_1 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + (1 | site_id_l),
@@ -734,6 +743,15 @@ fi_4 <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + 
                      schooling_yrs:ses:pgs + 
                      C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                    data = cog.complete, REML = F) 
+
+fi_4_Keller <- lmerTest::lmer(nihtbx_fluidcomp_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                         pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                         schooling_yrs:ses:pgs + 
+                           C1*ses + C2*ses + C3*ses + C4*ses + C5*ses + C6*ses + C7*ses + C8*ses + C9*ses + C10*ses + C11*ses + C12*ses + C13*ses + C14*ses + C15*ses + C16*ses + C17*ses + C18*ses + C19*ses + C20*ses +
+                           C1*pgs + C2*pgs + C3*pgs + C4*pgs + C5*pgs + C6*pgs + C7*pgs + C8*pgs + C9*pgs + C10*pgs + C11*pgs + C12*pgs + C13*pgs + C14*pgs + C15*pgs + C16*pgs + C17*pgs + C18*pgs + C19*pgs + C20*pgs +
+                           C1*schooling_yrs + C2*schooling_yrs + C3*schooling_yrs + C4*schooling_yrs + C5*schooling_yrs + C6*schooling_yrs + C7*schooling_yrs + C8*schooling_yrs + C9*schooling_yrs + C10*schooling_yrs + C11*schooling_yrs + C12*schooling_yrs + C13*schooling_yrs + C14*schooling_yrs + C15*schooling_yrs + C16*schooling_yrs + C17*schooling_yrs + C18*schooling_yrs + C19*schooling_yrs + C20*schooling_yrs +
+                         C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                       data = cog.complete, REML = F) 
 
 # for list sorting
 
@@ -764,6 +782,16 @@ list_4 <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex
                          C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                        data = cog.complete, REML = F) 
 
+list_4_Keller <- lmerTest::lmer(nihtbx_list_uncorrected ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                           pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                           schooling_yrs:ses:pgs +  
+                             C1*ses + C2*ses + C3*ses + C4*ses + C5*ses + C6*ses + C7*ses + C8*ses + C9*ses + C10*ses + C11*ses + C12*ses + C13*ses + C14*ses + C15*ses + C16*ses + C17*ses + C18*ses + C19*ses + C20*ses +
+                             C1*pgs + C2*pgs + C3*pgs + C4*pgs + C5*pgs + C6*pgs + C7*pgs + C8*pgs + C9*pgs + C10*pgs + C11*pgs + C12*pgs + C13*pgs + C14*pgs + C15*pgs + C16*pgs + C17*pgs + C18*pgs + C19*pgs + C20*pgs +
+                             C1*schooling_yrs + C2*schooling_yrs + C3*schooling_yrs + C4*schooling_yrs + C5*schooling_yrs + C6*schooling_yrs + C7*schooling_yrs + C8*schooling_yrs + C9*schooling_yrs + C10*schooling_yrs + C11*schooling_yrs + C12*schooling_yrs + C13*schooling_yrs + C14*schooling_yrs + C15*schooling_yrs + C16*schooling_yrs + C17*schooling_yrs + C18*schooling_yrs + C19*schooling_yrs + C20*schooling_yrs +
+                           C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                         data = cog.complete, REML = F) 
+
+
 
 ########### Post hoc g analysis ###########
 
@@ -782,6 +810,14 @@ g_4 <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses +
                            C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
                          data = cog.complete, REML = F)
 
+g_4_Keller <- lmerTest::lmer(g ~ age_yrs + schooling_yrs + sex + pgs + ses + 
+                        pgs:ses + schooling_yrs:pgs + schooling_yrs:ses + age_yrs:pgs + age_yrs:ses +
+                        schooling_yrs:ses:pgs + 
+                        C1*ses + C2*ses + C3*ses + C4*ses + C5*ses + C6*ses + C7*ses + C8*ses + C9*ses + C10*ses + C11*ses + C12*ses + C13*ses + C14*ses + C15*ses + C16*ses + C17*ses + C18*ses + C19*ses + C20*ses +
+                        C1*pgs + C2*pgs + C3*pgs + C4*pgs + C5*pgs + C6*pgs + C7*pgs + C8*pgs + C9*pgs + C10*pgs + C11*pgs + C12*pgs + C13*pgs + C14*pgs + C15*pgs + C16*pgs + C17*pgs + C18*pgs + C19*pgs + C20*pgs +
+                        C1*schooling_yrs + C2*schooling_yrs + C3*schooling_yrs + C4*schooling_yrs + C5*schooling_yrs + C6*schooling_yrs + C7*schooling_yrs + C8*schooling_yrs + C9*schooling_yrs + C10*schooling_yrs + C11*schooling_yrs + C12*schooling_yrs + C13*schooling_yrs + C14*schooling_yrs + C15*schooling_yrs + C16*schooling_yrs + C17*schooling_yrs + C18*schooling_yrs + C19*schooling_yrs + C20*schooling_yrs +
+                        C1 + C2 + C3 + C4 + C5 + C6 + C7 + C8 + C9 + C10 + C11 + C12 + C13 + C14 + C15 + C16 + C17 + C18 + C19 + C20 + (1 | site_id_l),
+                      data = cog.complete, REML = F)
 
 ########### Post hoc white declared ###########
 
@@ -1219,10 +1255,10 @@ sjPlot::plot_model(cy_1_g, type = "diag")
 #                   p.style = "numeric",show.se = T, show.ci = NULL,
 #                   file = "~/Projects/R_projects/ABCDschooling/tables/g_results_fdr.html")
 # 
-sjPlot::tab_model(cy_4_EurA, fi_4_EurA, list_4_EurA, g_4_EurA,
-                  show.loglik = T, show.aic = T, digits = 3, p.adjust = "fdr",
-                  p.style = "numeric",show.se = T, show.ci = NULL,
-                  file = "~/Projects/R_projects/ABCDschooling/tables/EurA4_results_fdr_reStd.html")
+# sjPlot::tab_model(cy_4_EurA, fi_4_EurA, list_4_EurA, g_4_EurA,
+#                   show.loglik = T, show.aic = T, digits = 3, p.adjust = "fdr",
+#                   p.style = "numeric",show.se = T, show.ci = NULL,
+#                   file = "~/Projects/R_projects/ABCDschooling/tables/EurA4_results_fdr_reStd.html")
 
 # checking grade not recoded tables
 # sjPlot::tab_model(cy_1_5v4, fi_1_5v4, list_1_5v4,
