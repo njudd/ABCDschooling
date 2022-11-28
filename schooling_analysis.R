@@ -7,38 +7,18 @@
 ##################################################################
 ########### Main schooling analysis script: Notes ########### 
 
-
-
-# make an SI table with psych::describe() add VIFs?
-
-# maybe distribution plots in SI?
-
-# read the paper Rev2 gave and look into sibling analysis
-
-# could do Raw cor with Cy, Fi, list with PGS & than show the amount of genetic nurture?
-
-# need to figure out how to do it...
-
-# There are reasons to expect the correlation of PGS with IQ to be over estimated due to indirect genetic effects.
-# While previous studies have found these indirect genetic effects to be mediated via SES? (check this)
-# We used XXX siblings to estimate genetic nuture ***, we found the effect to decrease *, *, *.
-# Yet sibling analysis **** limitations. 
-
-
-
-
-
-
-
 # NDA 3.0 Release Notes ABCD README FIRST
 # this document has all the relevant info
 
-# Due to data sharing of ABCD, researchers must ask them for access (INSERT DOI of relevant release)
+# Due to data sharing of ABCD, researchers must ask them for access
 # Most data is from ABCD's release 3.0 only two things are inhouse
 # 1. A list of randomally selected single siblings (this is on the github)
 # 2. A multitrait cog-PGS score computed by SciLife Lab ('abcd_pgs.txt')
 # After getting access to ABCD's genetic data you can ask us for this data to replicate the analysis. 
 # You must prove that you have current and approved access to ABCD's genetic data.
+# UPDATE: Unfortunately the ABCD data use protocols require us to delete data
+# This paper has a lot of robustness analyses, I am confident with a slightly 
+# different EduYears-PGS the results will stay the same.
 
 # variables
 # abcd_tbss01 is the two timepoint cognition file
@@ -1657,8 +1637,5 @@ ggplot(cog, aes(age_sub, nihtbx_cryst_uncorrected, color = demo_ed_v2)) +
   geom_jitter(alpha = .3) +
   geom_smooth(method = "lm") +
   theme_minimal()
-
-
-
 
 
