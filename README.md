@@ -26,4 +26,4 @@ See: **schooling_analysis.R**
 
 This repository includes all code to replicate every result, figure and table in the manuscript. We could not release the data as you need to request access from NDA to get data from ABCD. Yet we have kept the orginal file names in the data directory.
 
-We computed cog-PGS inhouse, if you contact us with proof of NDA access to ABCD genetic data we will happy send it to you. Furthermore,  we randomally sampled a single sibling from each family, this list is released in the data directory.
+We computed cog-PGS inhouse, unforntuely due to a NDA policies we cannot share it and must deleted it within 6 months.
