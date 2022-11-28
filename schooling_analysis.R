@@ -1599,9 +1599,6 @@ list_school_plt <- ggplot(visreg_partial_residi_list, aes(x = schooling_yrs, y =
 cy_school_plt / fi_school_plt / list_school_plt
 
 
-
-
-
 #### 
 
 # you need to residualize age by interview date,
